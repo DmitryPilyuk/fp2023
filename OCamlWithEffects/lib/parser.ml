@@ -98,7 +98,7 @@ let parse_name =
 let parse_uncapitalized_name =
   parse_name
   >>= fun name ->
-  if is_lower name.[0] || name.[0] = '_'
+  if (is_lower name.[0] || name.[0] = '_') && is_keyword name != true
   then return name
   else fail "Parsing error: not an uncapitalized entity."
 ;;
