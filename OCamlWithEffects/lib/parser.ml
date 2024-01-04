@@ -16,7 +16,7 @@ type dispatch =
 let econst x = EConst x
 let ebinop op left_op right_op = EBinaryOperation (op, left_op, right_op)
 let eunop operator operand = EUnaryOperation (operator, operand)
-let identifier x = EIdentifier x
+let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
 let efun var_list expression = EFun (var_list, expression)
 
@@ -111,7 +111,7 @@ let parse_ident =
   >>= fun s ->
   if is_keyword s
   then fail "Parsing error: name is used as keyword"
-  else return @@ EIdentifier s
+  else return @@ eidentifier s
 ;;
 
 let parse_const =
