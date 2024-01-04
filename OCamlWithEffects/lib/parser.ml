@@ -25,7 +25,7 @@ let declraration func_name var_list expression =
 ;;
 
 let rec_declraration func_name var_list expression =
-  EDeclaration (func_name, var_list, expression)
+  ERecDeclaration (func_name, var_list, expression)
 ;;
 
 let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, false_b)
