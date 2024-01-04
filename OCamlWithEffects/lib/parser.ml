@@ -85,6 +85,8 @@ let is_acceptable_fl = function
 
 let is_letter c = is_upper c || is_lower c
 let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
+let sqr_parens p = skip_wspace *> char '[' *> skip_wspace *> p <* skip_wspace <* char ']'
+let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
 
 let parse_name =
   fix
