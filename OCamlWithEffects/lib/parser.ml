@@ -8,6 +8,7 @@ open Angstrom
 type dispatch =
   { parse_bin_op : dispatch -> expr Angstrom.t
   ; parse_list : dispatch -> expr Angstrom.t
+  ; parse_tuple : dispatch -> expr Angstrom.t
   ; parse_application : dispatch -> expr Angstrom.t
   ; parse_fun : dispatch -> expr Angstrom.t
   ; parse_if_then_else : dispatch -> expr Angstrom.t
@@ -18,6 +19,7 @@ let econst x = EConst x
 let ebinop op left_op right_op = EBinaryOperation (op, left_op, right_op)
 let eunop operator operand = EUnaryOperation (operator, operand)
 let elist cont = EList cont
+let etuple cont = ETuple cont
 let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
 let efun var_list expression = EFun (var_list, expression)
@@ -144,10 +146,20 @@ let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
 let sqr_parens p = skip_wspace *> char '[' *> p <* skip_wspace <* char ']'
 let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
 
-let list_sep = skip_wspace *> char ';' *> skip_wspace 
-  <|> (skip_wspace *> peek_char >>= function
-  | Some c when c != ']' -> fail "Error: Expected semicolon or end of list"
-  | _ -> return())
+let list_sep =
+  skip_wspace *> char ';' *> skip_wspace
+  <|> (skip_wspace *> peek_char
+       >>= function
+       | Some c when c != ']' -> fail "Error: Expected semicolon or end of list"
+       | _ -> return ())
+;;
+
+let tuple_sep =
+  skip_wspace *> char ',' *> skip_wspace
+  <|> (skip_wspace *> peek_char
+       >>= function
+       | Some c when c != ')' -> fail "Error: Expected semicolon or end of list"
+       | _ -> return ())
 ;;
 
 let parse_name =
@@ -206,6 +218,7 @@ let parse_fun pack =
     choice
       [ pack.parse_bin_op pack
       ; pack.parse_list pack
+      ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; self
       ; pack.parse_if_then_else pack
@@ -230,6 +243,7 @@ let parse_if_then_else pack =
     choice
       [ pack.parse_bin_op pack
       ; pack.parse_list pack
+      ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; self
@@ -267,6 +281,7 @@ let parse_bin_op pack =
     choice
       [ parens self
       ; pack.parse_list pack
+      ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_if_then_else pack
@@ -299,25 +314,47 @@ let parse_bin_op pack =
   | _ -> fail "Error: not binary operation."
 ;;
 
-let parse_list pack = 
+let parse_list pack =
   fix
   @@ fun self ->
-    skip_wspace *>
-    let parse_expr = 
-      choice
-        [ pack.parse_bin_op pack
-        ; self
-        ; pack.parse_application pack
-        ; pack.parse_fun pack
-        ; pack.parse_if_then_else pack
-        ; parse_const
-        ; parse_ident
-        ] 
-    in
-    let content = skip_wspace *> many (parse_expr <* list_sep)
-    in
-    parens self
-    <|> lift elist @@ sqr_parens @@ content
+  skip_wspace
+  *>
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; self
+      ; pack.parse_tuple pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let content = skip_wspace *> many (parse_expr <* list_sep) in
+  parens self <|> lift elist @@ sqr_parens @@ content
+;;
+
+(*TODO: fix parsing tuple of 1 element*)
+let parse_tuple pack =
+  fix
+  @@ fun self ->
+  skip_wspace
+  *>
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; self
+      ; pack.parse_list pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let content = skip_wspace *> many (parse_expr <* tuple_sep) in
+  parens self <|> lift etuple @@ parens @@ content
 ;;
 
 let parse_declaration pack =
@@ -327,6 +364,7 @@ let parse_declaration pack =
     choice
       [ pack.parse_bin_op pack
       ; pack.parse_list pack
+      ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_if_then_else pack
@@ -365,6 +403,7 @@ let parse_application pack =
       and operand_parser =
         choice
           [ parens @@ pack.parse_bin_op pack
+          ; pack.parse_tuple pack
           ; pack.parse_list pack
           ; parens self
           ; parens @@ pack.parse_fun pack
@@ -378,7 +417,15 @@ let parse_application pack =
       function_parser >>= fun init -> chainl init >>= fun init -> go init)
 ;;
 
-let default = { parse_bin_op; parse_list; parse_application; parse_fun; parse_if_then_else }
+let default =
+  { parse_bin_op
+  ; parse_list
+  ; parse_tuple
+  ; parse_application
+  ; parse_fun
+  ; parse_if_then_else
+  }
+;;
 
 let parse input =
   parse_string ~consume:All (many (parse_declaration default) <* skip_wspace) input
