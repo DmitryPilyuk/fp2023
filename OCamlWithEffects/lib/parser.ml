@@ -164,7 +164,7 @@ let tuple_sep =
   skip_wspace *> char ',' *> skip_wspace
   <|> (skip_wspace *> peek_char
        >>= function
-       | Some c when c != ')' -> fail "Error: Expected semicolon or end of list"
+       | Some c when c != ')' -> fail "Error: Expected comma or end of tuple"
        | _ -> return ())
 ;;
 
