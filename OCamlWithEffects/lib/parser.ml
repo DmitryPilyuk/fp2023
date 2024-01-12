@@ -6,7 +6,8 @@ open Ast
 open Angstrom
 
 type dispatch =
-  { parse_bin_op : dispatch -> expr Angstrom.t
+  { parse_un_op : dispatch -> expr Angstrom.t
+  ; parse_bin_op : dispatch -> expr Angstrom.t
   ; parse_list : dispatch -> expr Angstrom.t
   ; parse_tuple : dispatch -> expr Angstrom.t
   ; parse_application : dispatch -> expr Angstrom.t
@@ -49,6 +50,11 @@ let sLt _ = Lt
 let sLte _ = Lte
 let sAnd _ = And
 let sOr _ = Or
+(* ---------------- *)
+
+(* Constructors for unary operations *)
+let uMin _ = Minus
+let uNot _  = Not
 (* ---------------- *)
 
 let is_keyword = function
@@ -217,6 +223,7 @@ let parse_fun pack =
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
@@ -242,6 +249,7 @@ let parse_if_then_else pack =
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
@@ -280,6 +288,7 @@ let parse_bin_op pack =
   let parse_expr =
     choice
       [ parens self
+      ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
@@ -314,6 +323,37 @@ let parse_bin_op pack =
   | _ -> fail "Error: not binary operation."
 ;;
 
+let parse_un_op pack = 
+  fix
+  @@ fun self ->
+  skip_wspace
+  *>
+  let parse_minus = skip_wspace *> char '-' >>| uMin
+  and parse_not = skip_wspace *> string "not" >>| uNot
+  and parse_content_minus =
+    choice
+      [ parens self
+      ; parens @@ pack.parse_application pack
+      ; parens @@ pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ; parens @@ pack.parse_bin_op pack
+      ]
+  and parse_content_not =
+    choice
+      [ parens @@ pack.parse_bin_op pack
+      ; parens self
+      ; parens @@ pack.parse_application pack
+      ; parens @@ pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  parens self
+  <|> lift2 eunop parse_minus parse_content_minus
+  <|> lift2 eunop parse_not parse_content_not
+;;
+
 let parse_list pack =
   fix
   @@ fun self ->
@@ -322,6 +362,7 @@ let parse_list pack =
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
       ; self
       ; pack.parse_tuple pack
       ; pack.parse_application pack
@@ -330,7 +371,7 @@ let parse_list pack =
       ; parse_const
       ; parse_ident
       ]
-  in
+  in 
   let content = skip_wspace *> many (parse_expr <* list_sep) in
   parens self <|> lift elist @@ sqr_parens @@ content
 ;;
@@ -344,6 +385,7 @@ let parse_tuple pack =
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
       ; self
       ; pack.parse_list pack
       ; pack.parse_application pack
@@ -363,6 +405,7 @@ let parse_declaration pack =
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
@@ -403,6 +446,7 @@ let parse_application pack =
       and operand_parser =
         choice
           [ parens @@ pack.parse_bin_op pack
+          ; parens @@ pack.parse_un_op pack
           ; pack.parse_tuple pack
           ; pack.parse_list pack
           ; parens self
@@ -419,6 +463,7 @@ let parse_application pack =
 
 let default =
   { parse_bin_op
+  ; parse_un_op
   ; parse_list
   ; parse_tuple
   ; parse_application
