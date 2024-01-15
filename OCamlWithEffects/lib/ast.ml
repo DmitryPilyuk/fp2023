@@ -13,7 +13,7 @@ type const =
 [@@deriving show { with_path = false }]
 
 type bin_op =
-  | Plus
+  | Add
   | Sub
   | Mul
   | Div
@@ -30,6 +30,7 @@ type bin_op =
 type un_op =
   | Not
   | Minus
+  | Plus
 [@@deriving show { with_path = false }]
 
 type expr =

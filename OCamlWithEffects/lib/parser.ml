@@ -38,7 +38,7 @@ let ematch_with expression cases = EMatchWith (expression, cases)
 (* ---------------- *)
 
 (* Constructors for binary operations *)
-let sAdd _ = Plus
+let sAdd _ = Add
 let sSub _ = Sub
 let sMul _ = Mul
 let sDiv _ = Div
@@ -55,6 +55,7 @@ let sOr _ = Or
 (* Constructors for unary operations *)
 let uMin _ = Minus
 let uNot _  = Not
+let uPlus _ = Plus
 (* ---------------- *)
 
 let is_keyword = function
