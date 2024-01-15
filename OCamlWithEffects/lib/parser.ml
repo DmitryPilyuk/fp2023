@@ -379,7 +379,6 @@ let parse_list pack =
   parens self <|> lift elist @@ sqr_parens @@ content
 ;;
 
-(*TODO: fix parsing tuple of 1 element*)
 let parse_tuple pack =
   fix
   @@ fun self ->
@@ -399,7 +398,9 @@ let parse_tuple pack =
       ]
   in
   let content = skip_wspace *> many (parse_expr <* tuple_sep) in
-  parens self <|> lift etuple @@ parens @@ content
+  parens self <|>
+  parens parse_const <|>
+  lift etuple @@ parens @@ content
 ;;
 
 let parse_declaration pack =
