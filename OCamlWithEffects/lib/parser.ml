@@ -330,8 +330,9 @@ let parse_un_op pack =
   skip_wspace
   *>
   let parse_minus = skip_wspace *> char '-' >>| uMin
+  and parse_plus = skip_wspace *> char '+' >>| uPlus
   and parse_not = skip_wspace *> string "not" >>| uNot
-  and parse_content_minus =
+  and parse_content_minus_and_plus =
     choice
       [ parens self
       ; parens @@ pack.parse_application pack
@@ -351,7 +352,8 @@ let parse_un_op pack =
       ]
   in
   parens self
-  <|> lift2 eunop parse_minus parse_content_minus
+  <|> lift2 eunop parse_minus parse_content_minus_and_plus
+  <|> lift2 eunop parse_plus parse_content_minus_and_plus
   <|> lift2 eunop parse_not parse_content_not
 ;;
 
