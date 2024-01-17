@@ -1,4 +1,7 @@
-(* todo: добавить шапку *)
+(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 (* todo: добавить комменты к типам *)
 (* TODO: decide whether we implement char/string or not *)
 
@@ -19,7 +22,6 @@ type typ =
   | TTuple of typ list
   | TList of typ
   | TEffect of typ
-;;
 
 module TVarSet = Stdlib.Set.Make (Int)
 
@@ -36,4 +38,4 @@ let tarrow left right = TArr (left, right)
 let ttuple x = TTuple x
 let tlist x = TList x
 let teffect x = TEffect x
-let (@->) = tarrow
+let ( @-> ) = tarrow
