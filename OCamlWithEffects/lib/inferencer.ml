@@ -5,17 +5,10 @@
 open Type
 
 (* TODO: decide where to put the output of types and errors *)
-type error = 
+type error =
   [ `Occurs_check
   | `Unification_failed of typ * typ
   ]
-
-let pp_error ppf : error -> _ =
-  fun (e : error) ->
-  match e with
-  | `Occurs_check -> Format.fprintf ppf "{|Occurs check failed.|}"
-  | `Unification_failed (typ1, typ2) -> Format.fprintf ppf "{|Unification failed.|}" (* добавить типы в ошибку *)
-;;
 
 let rec pp_type ppf (typ : typ) =
   match typ with
@@ -49,6 +42,17 @@ let rec pp_type ppf (typ : typ) =
       tup_list
 ;;
 
+let pp_error ppf : error -> _ =
+  fun (e : error) ->
+  match e with
+  | `Occurs_check -> Format.fprintf ppf "{|Occurs check failed.|}"
+  | `Unification_failed (typ1, typ2) ->
+    Format.fprintf ppf "{|Unification failed: type is |}";
+    pp_type ppf typ1;
+    Format.fprintf ppf "{|, but expexted |}";
+    pp_type ppf typ2
+;;
+
 module R : sig
   type 'a t
 
@@ -63,7 +67,7 @@ module R : sig
   end
 
   module RList : sig
-     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -191,29 +195,29 @@ end = struct
     helper
   ;;
 
-  let rec unify l r = 
+  let rec unify l r =
     match l, r with
     | TPrim l, TPrim r when l = r -> return empty
     (* | TPrim _, TPrim _ -> fail (`Unification_failed(l, r)) - вроде охватывается последним случаем *)
     | TVar a, TVar b when a = b -> return empty
     | TVar a, t | t, TVar a -> singleton a t
-    | TArr (left1, right1), TArr(left2, right2) ->
+    | TArr (left1, right1), TArr (left2, right2) ->
       let* sub1 = unify left1 left2 in
       let* sub2 = unify (apply sub1 right1) (apply sub1 right2) in
       compose sub1 sub2
     | TList typ1, TList typ2 -> unify typ1 typ2
-    | TTuple t_list1, TTuple t_list2 -> 
-      (match 
-        Base.List.fold2 t_list1 t_list2 ~init:(return empty) ~f:(fun acc it1 it2 ->
-          let* sub1 = acc in
-          let* sub2 = unify (apply sub1 it1) (apply sub1 it2) in
-          compose sub1 sub2)
+    | TTuple t_list1, TTuple t_list2 ->
+      (match
+         Base.List.fold2 t_list1 t_list2 ~init:(return empty) ~f:(fun acc it1 it2 ->
+           let* sub1 = acc in
+           let* sub2 = unify (apply sub1 it1) (apply sub1 it2) in
+           compose sub1 sub2)
        with
        | Ok r -> r
-       | _ -> fail (`Unification_failed(l, r)))
+       | _ -> fail (`Unification_failed (l, r)))
     | TEffect typ1, TEffect typ2 -> unify typ1 typ2
-    | _ -> fail (`Unification_failed(l, r))
-  
+    | _ -> fail (`Unification_failed (l, r))
+
   and extend k v sub =
     match find sub k with
     | None ->
@@ -224,11 +228,11 @@ end = struct
         let new_data = apply sub2 data in
         return (Base.Map.update acc key ~f:(fun _ -> new_data))
       in
-      Base.Map.fold sub ~init:(return sub2) ~f:(f1)
-    | Some vl -> 
+      Base.Map.fold sub ~init:(return sub2) ~f:f1
+    | Some vl ->
       let* sub2 = unify v vl in
       compose sub sub2
-  
+
   and compose sub1 sub2 = RMap.fold_left sub2 ~init:(return sub1) ~f:extend
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
