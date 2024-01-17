@@ -87,3 +87,79 @@ end = struct
 
   let run m = snd (m 0)
 end
+
+module Type = struct
+  type t = typ
+
+  let rec occurs_in v = function
+    | TVar b -> b = v
+    | TArr (left, right) -> occurs_in v left || occurs_in v right
+    | TList typ -> occurs_in v typ
+    | TTuple typ_list -> List.fold_left (fun acc item -> acc || occurs_in v item) false typ_list
+    | TEffect typ -> occurs_in v typ
+    | TPrim _ -> false
+  ;;
+
+  let type_vars =
+    let rec helper acc = function
+      | TVar n -> TVarSet.add n acc
+      | TArr (left, right) -> helper (helper acc left) right
+      | TList typ -> helper acc typ
+      | TTuple typ_list -> List.fold_left (fun acc item -> helper acc item) acc typ_list
+      | TEffect typ -> helper acc typ
+      | TPrim _ -> acc
+    in
+    helper TVarSet.empty
+  ;;
+
+end
+
+module Subst : sig
+  typ t
+
+  val empty : t
+  val singleton : int -> typ -> t R.t
+  val find : int -> t -> typ option
+  val remove: t -> int -> t
+
+  val apply : t -> typ -> typ
+  val unify : typ -> typ -> t R.t
+  val compose : t -> t -> t R.t
+  val compose_all : t list -> t R.t
+end = struct
+  open R
+  open R.Syntax
+
+  type t = (int, typ, Base.Int.comparator_witness) Base.Map.t
+  
+  let empty = Base.Map.empty (module Base.Int)
+
+  let mapping k v =
+    if Type.occurs_in k v then fail `Occurs_check else return (k, v)
+  ;;
+
+  let singleton k v =
+    let* k, v = mapping k v in
+    return Base.Map.singleton (module Base.Int) k v
+  ;;
+
+  let find sub k = Base.Map.find sub k
+  let remove sub k = Base.Map.remove sub k
+
+  let apply sub =
+    let rec helper = function
+      | TVar n ->
+        (match find sub n with
+        | None -> tvar n
+        | Some v -> v)
+      | TArr (left, right) -> tarrow (helper left) (helper right)
+      | TList typ -> tlist (helper typ)
+      | TTuple t_list -> ttuple (Base.List.map t_list ~f:helper)
+      | other -> other
+    in
+    helper
+  ;;
+
+  (* TODO: unify, extend, compose, compose_all *)
+
+end
