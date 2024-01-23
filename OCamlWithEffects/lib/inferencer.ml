@@ -254,3 +254,31 @@ module Scheme = struct
       Scheme(bind_vars, Subst.apply sub2 ty)
   ;;
 end
+
+module TypeEnv = struct
+  type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
+
+  let empty : t = Base.Map.empty (module Base.String)
+
+  let free_vars : t -> TVarSet.t =
+    fun env ->
+    Base.Map.fold
+    ~init:TVarSet.empty
+    ~f:(fun ~key:_ ~data acc -> TVarSet.union acc (Scheme.free_vars data))
+    env
+  ;;
+
+  let extend : t -> string -> scheme -> t =
+    fun env key schema ->
+      Base.Map.update env key ~f:(fun _ -> schema)
+  ;;
+
+  let apply : t -> Subst.t -> t =
+    fun env sub -> Base.Map.map env ~f:(Scheme.apply sub)
+  ;;
+
+  let find = 
+    fun env key -> Base.Map.find env key
+  ;;
+  
+end
