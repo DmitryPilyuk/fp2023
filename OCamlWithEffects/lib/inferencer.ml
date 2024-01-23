@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Type
+open Ast
 
 (* TODO: decide where to put the output of types and errors *)
 type error =
@@ -314,4 +315,90 @@ let lookup_env env var_name =
     let* ty = instantiate scheme in
     return (Subst.empty, ty)
   | None -> fail (`No_variable var_name)
+;;
+
+let infer_const = function
+  | Ast.Int _ -> tint
+  | Ast.Bool _ -> tbool
+  | Ast.Char _ -> tchar
+  | Ast.String _ -> tstring
+  | Ast.Unit -> tunit
+;;
+
+let infer_id env = fun id ->
+  match id with
+  | "_" -> 
+    let* fv = fresh_var in
+    return (Subst.empty, fv)
+  | _ -> lookup_env env id
+;;
+
+let binary_operator_type = fun operator ->
+  match operator with
+  | Eq | NEq | Gt | Gte | Lt | Lte -> 
+    let* fv = fresh_var in return(fv, tbool)
+  | Add | Sub | Mul | Div -> return(tint, tint)
+  | And | Or -> return(tbool, tbool)
+;;
+
+let unary_operator_type = fun operator ->
+  match operator with
+  | Minus -> tint
+  | Plus -> tint
+  | Not -> tbool
+;;
+
+let infer_expr =
+  let rec helper env = function
+  | EConst c -> return (Subst.empty, infer_const c)
+  | EIdentifier id -> infer_id env id
+  | EUnaryOperation (op, expr) ->
+    let op = unary_operator_type op in
+    let* sub1, ty = helper env expr in
+    let* sub2 = Subst.unify ty op in
+    let* sub3 = Subst.compose sub1 sub2 in
+    return (sub3, op)
+  | EBinaryOperation (op, expr1, expr2) ->
+    let* args_type, expr_type = binary_operator_type op in
+    let* sub_left, ty1 = helper env expr1 in
+    let* sub_right, ty2 = helper env expr2 in
+    let* sub1 = Subst.unify ty1 args_type in
+    let* sub2 = Subst.unify (Subst.apply sub1 ty2) args_type in
+    let* sub = Subst.compose_all [ sub_left; sub_right; sub1; sub2] in
+    return (sub, expr_type)
+  | EFun (args, body) -> (* !!! *)
+    (match args with
+      | [] -> helper env body
+      | hd :: tl ->
+        let* tv = fresh_var in
+        let env' =
+          TypeEnv.extend env hd (Scheme(TVarSet.empty, tv))
+        in
+        let* sub, typ = helper env' (EFun (tl, body)) in
+        let result = tarrow (Subst.apply sub tv) typ in
+        return (sub, result))
+  | EDeclaration (_, args, body)
+  | ERecDeclaration (_, args, body) -> (* !!! *)
+    helper env (EFun (args, body))
+  | _ -> return (Subst.empty, tint)
+  in
+  helper
+;;
+
+let run_inference expr = Result.map snd (run (infer_expr TypeEnv.empty expr))
+
+let print_typ typ = (* !!! *)
+  let s = Format.asprintf "%a" pp_type typ in
+  Format.printf "%s\n" s
+;;
+
+let print_type_error error = (* !!! *)
+  let s = Format.asprintf "%a" pp_error error in
+  Format.printf "%s\n" s
+;;
+
+let print_result expr = (* !!! *)
+  match run_inference expr with
+    | Ok typ -> print_typ typ
+    | Error x -> print_type_error x
 ;;
