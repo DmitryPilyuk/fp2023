@@ -8,6 +8,7 @@ open Type
 type error =
   [ `Occurs_check
   | `Unification_failed of typ * typ
+  | `No_variable of string
   ]
 
 let rec pp_type ppf (typ : typ) =
@@ -51,6 +52,7 @@ let pp_error ppf : error -> _ =
     pp_type ppf typ1;
     Format.fprintf ppf "{|, but expexted |}";
     pp_type ppf typ2
+  | `No_variable name -> Format.fprintf ppf "{|No such variable: %s|}" name
 ;;
 
 module R : sig
@@ -280,5 +282,36 @@ module TypeEnv = struct
   let find = 
     fun env key -> Base.Map.find env key
   ;;
-  
+
 end
+
+open R
+open R.Syntax
+
+let fresh_var = fresh >>| fun name -> tvar name
+
+let instantiate : scheme -> typ R.t =
+  fun (Scheme (bind_var, ty)) ->
+    TVarSet.fold
+      (fun var_name acc ->
+        let* acc = acc in
+        let* fv = fresh_var in
+        let* sub = Subst.singleton var_name fv in
+        return (Subst.apply sub acc))
+      bind_var
+      (return ty)
+;;
+
+let generalize : TypeEnv.t -> Type.t -> scheme =
+  fun env ty ->
+    let free = TVarSet.diff (Type.type_vars ty) (TypeEnv.free_vars env) in
+    Scheme(free, ty)
+;;
+
+let lookup_env env var_name =
+  match TypeEnv.find env var_name with
+  | Some scheme ->
+    let* ty = instantiate scheme in
+    return (Subst.empty, ty)
+  | None -> fail (`No_variable var_name)
+;;
