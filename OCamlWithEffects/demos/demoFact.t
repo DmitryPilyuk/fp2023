@@ -1,5 +1,5 @@
   $ dune exec demoFact
-  [(EDeclaration ("fact", ["n"],
+  [(ERecDeclaration ("fact", ["n"],
       (EIfThenElse (
          (EBinaryOperation (Eq, (EIdentifier "n"), (EConst (Int 1)))),
          (EConst (Int 1)),

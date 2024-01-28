@@ -1,3 +1,5 @@
+(include_subdirs unqualified)
+
 (library
  (name ocaml_with_effects_lib)
  (public_name OCamlWithEffects.Lib)
@@ -5,5 +7,15 @@
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))
+
+(library
+ (name tests)
+ (modules Parser_tests)
+ (libraries ocaml_with_effects_lib)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
