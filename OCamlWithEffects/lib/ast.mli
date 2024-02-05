@@ -33,19 +33,28 @@ type un_op =
   | Plus
 [@@deriving show { with_path = false }]
 
+type pattern =
+  | PAny (* _ *)
+  | PNill (* [] *)
+  | PConst of const (* 0 *)
+  | PVal of id (* name *)
+  | PTuple of pattern list
+  | PListCons of pattern * pattern
+[@@deriving show { with_path = false }]
+
 type expr =
   | EConst of const
   | EBinaryOperation of bin_op * expr * expr
   | EUnaryOperation of un_op * expr
   | EIdentifier of id
   | EApplication of expr * expr
-  | EFun of id list * expr
+  | EFun of id list * expr (** pattern * expr **)
   | EDeclaration of id * id list * expr
   | ERecDeclaration of id * id list * expr
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | ETuple of expr list
-  | EMatchWith of expr * (expr * expr) list
+  | EMatchWith of expr * (pattern * expr) list
 [@@deriving show { with_path = false }]
 
 type program = expr list [@@deriving show { with_path = false }]

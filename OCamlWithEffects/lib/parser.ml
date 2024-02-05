@@ -58,6 +58,13 @@ let uNot _  = Not
 let uPlus _ = Plus
 (* ---------------- *)
 
+(* Constructors for patterns *)
+let pAny _ = PAny
+let pNill _ = PNill
+let pConst c = PConst c
+let pVal v = PVal v
+(* ---------------- *)
+
 let is_keyword = function
   | "and"
   | "as"
@@ -214,6 +221,15 @@ let parse_const =
         choice [ parse_int; parse_str; parse_char; parse_bool; parse_unit ]
       in
       lift econst parse_const)
+;;
+
+let parse_pattern_nill = (sqr_parens skip_wspace) >>| pNill
+let parse_pattern_val = 
+  parse_ident >>|
+  (function
+    | EIdentifier i -> i
+    | _ -> "")
+  >>| pVal
 ;;
 
 let parse_fun pack =
