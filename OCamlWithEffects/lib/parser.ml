@@ -63,6 +63,8 @@ let pAny _ = PAny
 let pNill _ = PNill
 let pConst c = PConst c
 let pVal v = PVal v
+let pListCons l r = PListCons (l,r)
+let pTuple l = PTuple l
 (* ---------------- *)
 
 let is_keyword = function
@@ -155,10 +157,16 @@ let is_acceptable_fl = function
   | _ -> fail "abc"
 ;;
 
+let rec chainr1 e op =
+  e >>= fun se -> op >>= (fun f -> chainr1 e op >>| f se) <|> return se
+;;
+
 let is_letter c = is_upper c || is_lower c
+
 let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
 let sqr_parens p = skip_wspace *> char '[' *> p <* skip_wspace <* char ']'
 let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
+let list_constr = skip_wspace *> string "::"
 
 let list_sep =
   skip_wspace *> char ';' *> skip_wspace
@@ -193,7 +201,23 @@ let parse_uncapitalized_name =
   else fail "Parsing error: not an uncapitalized entity."
 ;;
 
-let parse_ident =
+let parse_cint = take_while1 is_digit >>| int_of_string >>| fun x -> Int x
+let parse_cstring = char '"' *> take_while (( != ) '"') <* char '"' >>| fun x -> String x
+let parse_cchar = char '\'' *> any_char <* char '\'' >>| fun x -> Char x
+let parse_cbool = string "true" <|> string "false" >>| bool_of_string >>| fun x -> Bool x
+let parse_cunit = string "()" >>| fun _ -> Unit
+
+let const constr =
+  fix
+  @@ fun self ->
+  skip_wspace
+  *> (parens self
+      <|>
+      let const = choice [ parse_cint; parse_cstring; parse_cchar; parse_cbool; parse_cunit ] in
+      lift constr const)
+;;
+
+let ident constr =
   skip_wspace *> peek_char
   >>= is_acceptable_fl
   >>= fun _ ->
@@ -201,42 +225,29 @@ let parse_ident =
   >>= fun s ->
   if is_keyword s
   then fail "Parsing error: name is used as keyword"
-  else return @@ eidentifier s
-;;
-
-let const =
-  fix
-  @@ fun self ->
-  skip_wspace
-  *> (parens self
-      <|>
-      let parse_int = take_while1 is_digit >>| int_of_string >>| fun x -> Int x
-      and parse_str =
-        char '"' *> take_while (( != ) '"') <* char '"' >>| fun x -> String x
-      and parse_char = char '\'' *> any_char <* char '\'' >>| fun x -> Char x
-      and parse_bool =
-        string "true" <|> string "false" >>| bool_of_string >>| fun x -> Bool x
-      and parse_unit = string "()" >>| fun _ -> Unit in
-      choice [ parse_int; parse_str; parse_char; parse_bool; parse_unit ])
+  else return @@ constr s
 ;;
 
 (*Pattern parsers*)
 let parse_pattern_nill = sqr_parens skip_wspace >>| pNill
-
-let parse_pattern_val =
-  parse_ident
-  >>| (function
-         | EIdentifier i -> i
-         | _ -> "")
-  >>| pVal
+let parse_pattern_any = skip_wspace *> char '_' >>| pAny
+let parse_pattern_val = ident pVal
+let parse_pattern_const = const pConst
+let parse_pattern_list_constr = list_constr *> return pListCons
+let parse_primitive_pattern = choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const ]
+let parse_pattern =
+  fix
+  @@ fun self ->
+  skip_wspace *>
+  let parse_pattern_list_constr = chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr in
+  choice [parse_pattern_list_constr; parse_primitive_pattern; parens self]
 ;;
 
-let parse_pattern_const = const >>| fun p -> pConst p
-let pattern = choice [ parse_pattern_nill; parse_pattern_val; parse_pattern_const ]
 (* TODO*)
 (*==================*)
 
-let parse_const = const >>| fun p -> econst p
+let parse_ident = ident eidentifier
+let parse_const = const econst
 
 let parse_fun pack =
   let parse_expr =
@@ -251,7 +262,7 @@ let parse_fun pack =
       ; parse_ident
       ]
   in
-  skip_wspace *> string "fun" *> many1 pattern
+  skip_wspace *> string "fun" *> many1 parse_pattern
   >>= fun args ->
   skip_wspace *> string "->" *> parse_expr
   >>= fun expr ->
