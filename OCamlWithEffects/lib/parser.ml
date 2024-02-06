@@ -54,7 +54,7 @@ let sOr _ = Or
 
 (* Constructors for unary operations *)
 let uMin _ = Minus
-let uNot _  = Not
+let uNot _ = Not
 let uPlus _ = Plus
 (* ---------------- *)
 
@@ -204,7 +204,7 @@ let parse_ident =
   else return @@ eidentifier s
 ;;
 
-let parse_const =
+let const =
   fix
   @@ fun self ->
   skip_wspace
@@ -217,20 +217,21 @@ let parse_const =
       and parse_bool =
         string "true" <|> string "false" >>| bool_of_string >>| fun x -> Bool x
       and parse_unit = string "()" >>| fun _ -> Unit in
-      let parse_const =
-        choice [ parse_int; parse_str; parse_char; parse_bool; parse_unit ]
-      in
-      lift econst parse_const)
+      choice [ parse_int; parse_str; parse_char; parse_bool; parse_unit ])
 ;;
 
-let parse_pattern_nill = (sqr_parens skip_wspace) >>| pNill
-let parse_pattern_val = 
-  parse_ident >>|
-  (function
-    | EIdentifier i -> i
-    | _ -> "")
+let parse_pattern_nill = sqr_parens skip_wspace >>| pNill
+
+let parse_pattern_val =
+  parse_ident
+  >>| (function
+         | EIdentifier i -> i
+         | _ -> "")
   >>| pVal
 ;;
+
+let parse_pattern_const = const >>| fun p -> pConst p
+let parse_const = const >>| fun p -> econst p
 
 let parse_fun pack =
   fix
@@ -340,7 +341,7 @@ let parse_bin_op pack =
   | _ -> fail "Error: not binary operation."
 ;;
 
-let parse_un_op pack = 
+let parse_un_op pack =
   fix
   @@ fun self ->
   skip_wspace
@@ -390,7 +391,7 @@ let parse_list pack =
       ; parse_const
       ; parse_ident
       ]
-  in 
+  in
   let content = skip_wspace *> many (parse_expr <* list_sep) in
   parens self <|> lift elist @@ sqr_parens @@ content
 ;;
@@ -414,9 +415,7 @@ let parse_tuple pack =
       ]
   in
   let content = skip_wspace *> many (parse_expr <* tuple_sep) in
-  parens self <|>
-  parens parse_const <|>
-  lift etuple @@ parens @@ content
+  parens self <|> parens parse_const <|> lift etuple @@ parens @@ content
 ;;
 
 let parse_declaration pack =
