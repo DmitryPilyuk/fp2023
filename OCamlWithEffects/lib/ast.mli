@@ -48,7 +48,7 @@ type expr =
   | EUnaryOperation of un_op * expr
   | EIdentifier of id
   | EApplication of expr * expr
-  | EFun of id list * expr (** pattern * expr **)
+  | EFun of pattern * expr
   | EDeclaration of id * id list * expr
   | ERecDeclaration of id * id list * expr
   | EIfThenElse of expr * expr * expr

@@ -23,7 +23,7 @@ let elist cont = EList cont
 let etuple cont = ETuple cont
 let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
-let efun var_list expression = EFun (var_list, expression)
+let efun var expression = EFun (var, expression)
 
 let declraration func_name var_list expression =
   EDeclaration (func_name, var_list, expression)
@@ -220,6 +220,7 @@ let const =
       choice [ parse_int; parse_str; parse_char; parse_bool; parse_unit ])
 ;;
 
+(*Pattern parsers*)
 let parse_pattern_nill = sqr_parens skip_wspace >>| pNill
 
 let parse_pattern_val =
@@ -231,13 +232,13 @@ let parse_pattern_val =
 ;;
 
 let parse_pattern_const = const >>| fun p -> pConst p
+let pattern = choice [ parse_pattern_nill; parse_pattern_val; parse_pattern_const ]
+(* TODO*)
+(*==================*)
+
 let parse_const = const >>| fun p -> econst p
 
 let parse_fun pack =
-  fix
-  @@ fun self ->
-  skip_wspace
-  *>
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
@@ -245,18 +246,18 @@ let parse_fun pack =
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
-      ; self
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
       ]
   in
-  parens self
-  <|> string "fun"
-      *> lift2
-           efun
-           (many1 parse_uncapitalized_name <* skip_wspace <* string "->" <* skip_wspace)
-           (parse_expr <* skip_wspace)
+  skip_wspace *> string "fun" *> many1 pattern
+  >>= fun args ->
+  skip_wspace *> string "->" *> parse_expr
+  >>= fun expr ->
+  match List.rev args with
+  | h :: tl -> return (List.fold_left (fun acc x -> efun x acc) (efun h expr) tl)
+  | _ -> fail "Error"
 ;;
 
 let parse_if_then_else pack =
