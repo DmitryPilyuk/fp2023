@@ -533,6 +533,23 @@ let default =
   }
 ;;
 
+let parsers input = choice 
+  [ parse_declaration input
+  ; parse_bin_op input
+  ; parse_un_op input
+  ; parse_list input
+  ; parse_tuple input
+  ; parse_application input
+  ; parse_fun input
+  ; parse_if_then_else input
+  ; parse_ident
+  ; parse_const
+]
+
+let parse_expr input =
+  parse_string ~consume:All (many (parsers default) <* skip_wspace) input
+;;
+
 let parse input =
   parse_string ~consume:All (many (parse_declaration default) <* skip_wspace) input
 ;;
