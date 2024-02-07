@@ -49,8 +49,8 @@ type expr =
   | EIdentifier of id
   | EApplication of expr * expr
   | EFun of pattern * expr
-  | EDeclaration of id * id list * expr
-  | ERecDeclaration of id * id list * expr
+  | EDeclaration of id * expr * expr option
+  | ERecDeclaration of id * expr * expr option
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | ETuple of expr list

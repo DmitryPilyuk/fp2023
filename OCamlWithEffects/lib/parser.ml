@@ -24,13 +24,10 @@ let etuple cont = ETuple cont
 let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
 let efun var expression = EFun (var, expression)
+let declraration func_name expression exp_in = EDeclaration (func_name, expression, exp_in)
 
-let declraration func_name var_list expression =
-  EDeclaration (func_name, var_list, expression)
-;;
-
-let rec_declraration func_name var_list expression =
-  ERecDeclaration (func_name, var_list, expression)
+let rec_declraration func_name expression exp_in =
+  ERecDeclaration (func_name, expression, exp_in)
 ;;
 
 let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, false_b)
@@ -63,7 +60,7 @@ let pAny _ = PAny
 let pNill _ = PNill
 let pConst c = PConst c
 let pVal v = PVal v
-let pListCons l r = PListCons (l,r)
+let pListCons l r = PListCons (l, r)
 let pTuple l = PTuple l
 (* ---------------- *)
 
@@ -162,7 +159,6 @@ let rec chainr1 e op =
 ;;
 
 let is_letter c = is_upper c || is_lower c
-
 let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
 let sqr_parens p = skip_wspace *> char '[' *> p <* skip_wspace <* char ']'
 let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
@@ -213,7 +209,9 @@ let const constr =
   skip_wspace
   *> (parens self
       <|>
-      let const = choice [ parse_cint; parse_cstring; parse_cchar; parse_cbool; parse_cunit ] in
+      let const =
+        choice [ parse_cint; parse_cstring; parse_cchar; parse_cbool; parse_cunit ]
+      in
       lift constr const)
 ;;
 
@@ -234,13 +232,20 @@ let parse_pattern_any = skip_wspace *> char '_' >>| pAny
 let parse_pattern_val = ident pVal
 let parse_pattern_const = const pConst
 let parse_pattern_list_constr = list_constr *> return pListCons
-let parse_primitive_pattern = choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const ]
+
+let parse_primitive_pattern =
+  choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const ]
+;;
+
 let parse_pattern =
   fix
   @@ fun self ->
-  skip_wspace *>
-  let parse_pattern_list_constr = chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr in
-  choice [parse_pattern_list_constr; parse_primitive_pattern; parens self]
+  skip_wspace
+  *>
+  let parse_pattern_list_constr =
+    chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr
+  in
+  choice [ parse_pattern_list_constr; parse_primitive_pattern; parens self ]
 ;;
 
 (* TODO*)
@@ -452,14 +457,30 @@ let parse_declaration pack =
     lift3
       rec_declraration
       parse_uncapitalized_name
-      (many parse_uncapitalized_name)
-      (skip_wspace *> string "=" *> parse_expr)
+      (many parse_pattern
+       >>= fun args ->
+       skip_wspace *> string "=" *> parse_expr
+       >>= fun expr ->
+       skip_wspace
+       *>
+       match List.rev args with
+       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
+       | _ -> return expr)
+      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
   | _ ->
     lift3
       declraration
       parse_uncapitalized_name
-      (many parse_uncapitalized_name)
-      (skip_wspace *> string "=" *> parse_expr)
+      (many parse_pattern
+       >>= fun args ->
+       skip_wspace *> string "=" *> parse_expr
+       >>= fun expr ->
+       skip_wspace
+       *>
+       match List.rev args with
+       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
+       | _ -> return expr)
+      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
 ;;
 
 let parse_application pack =
