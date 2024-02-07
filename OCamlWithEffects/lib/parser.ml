@@ -253,7 +253,8 @@ let parse_pattern =
   let parse_pattern_list_constr =
     chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr
   in
-  choice [ parse_pattern_list_constr; parse_primitive_pattern; parens self ]
+  choice
+    [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parens self ]
 ;;
 
 (* TODO*)

@@ -71,7 +71,6 @@ let%expect_test _ =
 
 let%expect_test _ =
   print_parse_result {| let x = (1) |};
-  [%expect
-    {|
+  [%expect {|
     [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
 ;;
