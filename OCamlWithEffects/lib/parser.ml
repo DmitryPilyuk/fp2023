@@ -233,6 +233,14 @@ let parse_pattern_val = ident pVal
 let parse_pattern_const = const pConst
 let parse_pattern_list_constr = list_constr *> return pListCons
 
+let parse_tuple p_pattern =
+  parens
+  @@ lift2
+       (fun h tl -> pTuple @@ (h :: tl))
+       p_pattern
+       (many1 (skip_wspace *> string "," *> p_pattern))
+;;
+
 let parse_primitive_pattern =
   choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const ]
 ;;
