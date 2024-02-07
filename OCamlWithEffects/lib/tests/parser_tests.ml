@@ -14,16 +14,19 @@ let%expect_test _ =
   print_parse_result {| let rec fact n = if n = 1 then 1 else n * fact (n - 1) |};
   [%expect
     {|
-    [(ERecDeclaration ("fact", ["n"],
-        (EIfThenElse (
-           (EBinaryOperation (Eq, (EIdentifier "n"), (EConst (Int 1)))),
-           (EConst (Int 1)),
-           (EBinaryOperation (Mul, (EIdentifier "n"),
-              (EApplication ((EIdentifier "fact"),
-                 (EBinaryOperation (Sub, (EIdentifier "n"), (EConst (Int 1))))))
+    [(ERecDeclaration ("fact",
+        (EFun ((PVal "n"),
+           (EIfThenElse (
+              (EBinaryOperation (Eq, (EIdentifier "n"), (EConst (Int 1)))),
+              (EConst (Int 1)),
+              (EBinaryOperation (Mul, (EIdentifier "n"),
+                 (EApplication ((EIdentifier "fact"),
+                    (EBinaryOperation (Sub, (EIdentifier "n"), (EConst (Int 1))))
+                    ))
+                 ))
               ))
-           ))
-        ))
+           )),
+        None))
       ] |}]
 ;;
 
@@ -31,8 +34,8 @@ let%expect_test _ =
   print_parse_result {| let x = [20; 24; 5] |};
   [%expect
     {|
-    [(EDeclaration ("x", [],
-        (EList [(EConst (Int 20)); (EConst (Int 24)); (EConst (Int 5))])))
+    [(EDeclaration ("x",
+        (EList [(EConst (Int 20)); (EConst (Int 24)); (EConst (Int 5))]), None))
       ] |}]
 ;;
 
@@ -41,12 +44,16 @@ let%expect_test _ =
   let main = f 4 6|};
   [%expect
     {|
-    [(EDeclaration ("f", ["x"; "y"],
-        (EBinaryOperation (Add, (EIdentifier "x"), (EIdentifier "y")))));
-      (EDeclaration ("main", [],
+    [(EDeclaration ("f",
+        (EFun ((PVal "x"),
+           (EFun ((PVal "y"),
+              (EBinaryOperation (Add, (EIdentifier "x"), (EIdentifier "y")))))
+           )),
+        None));
+      (EDeclaration ("main",
          (EApplication ((EApplication ((EIdentifier "f"), (EConst (Int 4)))),
-            (EConst (Int 6))))
-         ))
+            (EConst (Int 6)))),
+         None))
       ] |}]
 ;;
 
@@ -54,11 +61,11 @@ let%expect_test _ =
   print_parse_result {| let x = (1, 2, 3, 4) |};
   [%expect
     {|
-    [(EDeclaration ("x", [],
+    [(EDeclaration ("x",
         (ETuple
            [(EConst (Int 1)); (EConst (Int 2)); (EConst (Int 3));
-             (EConst (Int 4))])
-        ))
+             (EConst (Int 4))]),
+        None))
       ] |}]
 ;;
 
@@ -66,5 +73,5 @@ let%expect_test _ =
   print_parse_result {| let x = (1) |};
   [%expect
     {|
-    [(EDeclaration ("x", [], (EConst (Int 1))))] |}]
+    [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
 ;;
