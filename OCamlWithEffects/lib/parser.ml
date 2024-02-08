@@ -257,7 +257,6 @@ let parse_pattern =
     [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parens self ]
 ;;
 
-(* TODO*)
 (*==================*)
 
 let parse_ident = ident eidentifier
@@ -444,6 +443,34 @@ let parse_tuple pack =
   parens self <|> parens parse_const <|> lift etuple @@ parens @@ content
 ;;
 
+let parse_match_with pack =
+  fix
+  @@ fun self ->
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
+      ; self
+      ; pack.parse_list pack
+      ; pack.parse_tuple pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let parse_case =
+    lift2
+      (fun pat expr -> pat, expr)
+      (skip_wspace *> string "|" *> parse_pattern)
+      (skip_wspace *> string "->" *> parse_expr)
+  in
+  skip_wspace
+  *> string "match"
+  *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
+;;
+
 let parse_declaration pack =
   fix
   @@ fun _ ->
@@ -533,18 +560,20 @@ let default =
   }
 ;;
 
-let parsers input = choice 
-  [ parse_declaration input
-  ; parse_bin_op input
-  ; parse_un_op input
-  ; parse_list input
-  ; parse_tuple input
-  ; parse_application input
-  ; parse_fun input
-  ; parse_if_then_else input
-  ; parse_ident
-  ; parse_const
-]
+let parsers input =
+  choice
+    [ parse_declaration input
+    ; parse_bin_op input
+    ; parse_un_op input
+    ; parse_list input
+    ; parse_tuple input
+    ; parse_application input
+    ; parse_fun input
+    ; parse_if_then_else input
+    ; parse_ident
+    ; parse_const
+    ]
+;;
 
 let parse_expr input =
   parse_string ~consume:All (many (parsers default) <* skip_wspace) input
