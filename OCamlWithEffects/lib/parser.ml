@@ -445,8 +445,11 @@ let parse_tuple pack =
       ; parse_ident
       ]
   in
-  let content = skip_wspace *> many (parse_expr <* tuple_sep) in
-  parens self <|> parens parse_const <|> lift etuple @@ parens @@ content
+  parens
+  @@ lift2
+       (fun h tl -> etuple @@ (h :: tl))
+       parse_expr
+       (many1 (skip_wspace *> string "," *> parse_expr))
 ;;
 
 let parse_match_with pack =

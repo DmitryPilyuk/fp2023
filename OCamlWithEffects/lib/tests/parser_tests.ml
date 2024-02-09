@@ -80,7 +80,8 @@ let%expect_test _ =
   | 0 -> "zero"
   | _ -> "not zero"
   |};
-  [%expect {|
+  [%expect
+    {|
     [(EDeclaration ("f",
         (EFun ((PVal "x"),
            (EMatchWith ((EIdentifier "x"),
@@ -90,4 +91,10 @@ let%expect_test _ =
            )),
         None))
       ] |}]
+;;
+
+let%expect_test _ =
+  print_parse_result {| let x = (1,2) |};
+  [%expect {|
+    [(EDeclaration ("x", (ETuple [(EConst (Int 1)); (EConst (Int 2))]), None))] |}]
 ;;
