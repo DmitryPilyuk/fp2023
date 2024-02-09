@@ -482,7 +482,7 @@ let parse_match_with pack =
 
 let parse_declaration pack =
   fix
-  @@ fun _ ->
+  @@ fun self ->
   let parse_expr =
     choice
       [ pack.parse_bin_op pack
@@ -492,6 +492,7 @@ let parse_declaration pack =
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_match_with pack
+      ; self
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident

@@ -94,7 +94,24 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  print_parse_result {| let x = (1,2) |};
+  print_parse_result {| let f = 
+    let x = 5 in
+    1 + x * 3
+  |};
   [%expect {|
+    [(EDeclaration ("f",
+        (EDeclaration ("x", (EConst (Int 5)),
+           (Some (EBinaryOperation (Add, (EConst (Int 1)),
+                    (EBinaryOperation (Mul, (EIdentifier "x"), (EConst (Int 3))))
+                    )))
+           )),
+        None))
+      ] |}]
+;;
+
+let%expect_test _ =
+  print_parse_result {| let x = (1,2) |};
+  [%expect
+    {|
     [(EDeclaration ("x", (ETuple [(EConst (Int 1)); (EConst (Int 2))]), None))] |}]
 ;;
