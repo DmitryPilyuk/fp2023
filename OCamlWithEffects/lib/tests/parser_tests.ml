@@ -74,3 +74,20 @@ let%expect_test _ =
   [%expect {|
     [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
 ;;
+
+let%expect_test _ =
+  print_parse_result {| let f x = match x with 
+  | 0 -> "zero"
+  | _ -> "not zero"
+  |};
+  [%expect {|
+    [(EDeclaration ("f",
+        (EFun ((PVal "x"),
+           (EMatchWith ((EIdentifier "x"),
+              [((PConst (Int 0)), (EConst (String "zero")));
+                (PAny, (EConst (String "not zero")))]
+              ))
+           )),
+        None))
+      ] |}]
+;;

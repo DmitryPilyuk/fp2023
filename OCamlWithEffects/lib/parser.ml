@@ -12,6 +12,7 @@ type dispatch =
   ; parse_tuple : dispatch -> expr Angstrom.t
   ; parse_application : dispatch -> expr Angstrom.t
   ; parse_fun : dispatch -> expr Angstrom.t
+  ; parse_match_with : dispatch -> expr Angstrom.t
   ; parse_if_then_else : dispatch -> expr Angstrom.t
   }
 
@@ -270,6 +271,7 @@ let parse_fun pack =
       ; pack.parse_list pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
+      ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -295,6 +297,7 @@ let parse_if_then_else pack =
       ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_tuple pack
+      ; pack.parse_match_with pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; self
@@ -336,6 +339,7 @@ let parse_bin_op pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -412,6 +416,7 @@ let parse_list pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -434,6 +439,7 @@ let parse_tuple pack =
       ; pack.parse_list pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -482,6 +488,7 @@ let parse_declaration pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -539,6 +546,7 @@ let parse_application pack =
           ; pack.parse_list pack
           ; parens self
           ; parens @@ pack.parse_fun pack
+          ; parens @@ parse_match_with pack
           ; parens @@ pack.parse_if_then_else pack
           ; parse_const
           ; parse_ident
@@ -556,6 +564,7 @@ let default =
   ; parse_tuple
   ; parse_application
   ; parse_fun
+  ; parse_match_with
   ; parse_if_then_else
   }
 ;;
