@@ -498,36 +498,25 @@ let parse_declaration pack =
       ; parse_ident
       ]
   in
+  let helper constr =
+    lift3
+      constr
+      parse_uncapitalized_name
+      (many parse_pattern
+       >>= fun args ->
+       skip_wspace *> string "=" *> parse_expr
+       >>= fun expr ->
+       skip_wspace
+       *>
+       match List.rev args with
+       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
+       | _ -> return expr)
+      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
+  in
   skip_wspace *> string "let" *> skip_wspace1 *> option "" (string "rec" <* skip_wspace1)
   >>= function
-  | "rec" ->
-    lift3
-      rec_declraration
-      parse_uncapitalized_name
-      (many parse_pattern
-       >>= fun args ->
-       skip_wspace *> string "=" *> parse_expr
-       >>= fun expr ->
-       skip_wspace
-       *>
-       match List.rev args with
-       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
-       | _ -> return expr)
-      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
-  | _ ->
-    lift3
-      declraration
-      parse_uncapitalized_name
-      (many parse_pattern
-       >>= fun args ->
-       skip_wspace *> string "=" *> parse_expr
-       >>= fun expr ->
-       skip_wspace
-       *>
-       match List.rev args with
-       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
-       | _ -> return expr)
-      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
+  | "rec" -> helper rec_declraration
+  | _ -> helper declraration
 ;;
 
 let parse_application pack =
