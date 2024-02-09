@@ -53,6 +53,7 @@ type expr =
   | ERecDeclaration of id * expr * expr option
   | EIfThenElse of expr * expr * expr
   | EList of expr list
+  | EListCons of expr * expr
   | ETuple of expr list
   | EMatchWith of expr * (pattern * expr) list
 [@@deriving show { with_path = false }]
