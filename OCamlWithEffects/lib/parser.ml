@@ -9,6 +9,7 @@ type dispatch =
   { parse_un_op : dispatch -> expr Angstrom.t
   ; parse_bin_op : dispatch -> expr Angstrom.t
   ; parse_list : dispatch -> expr Angstrom.t
+  ; parse_list_cons : dispatch -> expr Angstrom.t
   ; parse_tuple : dispatch -> expr Angstrom.t
   ; parse_application : dispatch -> expr Angstrom.t
   ; parse_fun : dispatch -> expr Angstrom.t
@@ -21,6 +22,7 @@ let econst x = EConst x
 let ebinop op left_op right_op = EBinaryOperation (op, left_op, right_op)
 let eunop operator operand = EUnaryOperation (operator, operand)
 let elist cont = EList cont
+let elistcons l r = EListCons (l,r)
 let etuple cont = ETuple cont
 let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
@@ -269,6 +271,7 @@ let parse_fun pack =
       [ pack.parse_bin_op pack
       ; pack.parse_un_op pack
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_match_with pack
@@ -296,6 +299,7 @@ let parse_if_then_else pack =
       [ pack.parse_bin_op pack
       ; pack.parse_un_op pack
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_match_with pack
       ; pack.parse_application pack
@@ -336,6 +340,7 @@ let parse_bin_op pack =
       [ parens self
       ; pack.parse_un_op pack
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
@@ -413,6 +418,7 @@ let parse_list pack =
       [ pack.parse_bin_op pack
       ; pack.parse_un_op pack
       ; self
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
@@ -426,6 +432,31 @@ let parse_list pack =
   parens self <|> lift elist @@ sqr_parens @@ content
 ;;
 
+let parse_list_cons pack =
+  fix
+  @@ fun self ->
+    skip_wspace
+    *>
+    let parse_expr =
+      choice
+      [ parens @@ pack.parse_tuple pack
+      ; parens self
+      ; parens @@ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
+      ; pack.parse_list pack
+      ; pack.parse_application pack
+      ; parens @@ pack.parse_fun pack
+      ; parens @@ pack.parse_if_then_else pack
+      ; parens @@ pack.parse_match_with pack
+      ; parse_const
+      ; parse_ident
+      ]
+    in
+    let left = parse_expr <* list_constr in
+    let right = skip_wspace *> (self <|> parse_expr) in
+    lift2 elistcons left right
+;;
+
 let parse_tuple pack =
   fix
   @@ fun self ->
@@ -437,6 +468,7 @@ let parse_tuple pack =
       ; pack.parse_un_op pack
       ; self
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_match_with pack
@@ -461,6 +493,7 @@ let parse_match_with pack =
       ; pack.parse_un_op pack
       ; self
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
@@ -488,6 +521,7 @@ let parse_declaration pack =
       [ pack.parse_bin_op pack
       ; pack.parse_un_op pack
       ; pack.parse_list pack
+      ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
@@ -537,6 +571,7 @@ let parse_application pack =
           ; parens @@ pack.parse_un_op pack
           ; pack.parse_tuple pack
           ; pack.parse_list pack
+          ; parens @@ pack.parse_list_cons pack
           ; parens self
           ; parens @@ pack.parse_fun pack
           ; parens @@ parse_match_with pack
@@ -554,6 +589,7 @@ let default =
   { parse_bin_op
   ; parse_un_op
   ; parse_list
+  ; parse_list_cons
   ; parse_tuple
   ; parse_application
   ; parse_fun
@@ -568,6 +604,7 @@ let parsers input =
     ; parse_bin_op input
     ; parse_un_op input
     ; parse_list input
+    ; parse_list_cons input
     ; parse_tuple input
     ; parse_application input
     ; parse_fun input
