@@ -27,7 +27,12 @@ let pp_type ppf typ =
         | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" (helper) l (helper) r
         | _ -> Format.fprintf ppf "%a -> %a" (helper) l (helper) r
       in pp
-    | TList t -> Format.fprintf ppf "%a list" helper t
+    | TList t ->
+      let pp = 
+        match t with
+        | TArr (_, _) -> Format.fprintf ppf "(%a) list" helper t
+        | _ -> Format.fprintf ppf "%a list" helper t
+      in pp
     | TTuple tl ->
       Format.fprintf
         ppf
