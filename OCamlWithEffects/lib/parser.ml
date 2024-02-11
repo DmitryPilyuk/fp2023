@@ -22,7 +22,7 @@ let econst x = EConst x
 let ebinop op left_op right_op = EBinaryOperation (op, left_op, right_op)
 let eunop operator operand = EUnaryOperation (operator, operand)
 let elist cont = EList cont
-let elistcons l r = EListCons (l,r)
+let elistcons l r = EListCons (l, r)
 let etuple cont = ETuple cont
 let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
@@ -175,14 +175,6 @@ let list_sep =
        | _ -> return ())
 ;;
 
-let tuple_sep =
-  skip_wspace *> char ',' *> skip_wspace
-  <|> (skip_wspace *> peek_char
-       >>= function
-       | Some c when c != ')' -> fail "Error: Expected comma or end of tuple"
-       | _ -> return ())
-;;
-
 let parse_name =
   fix
   @@ fun self ->
@@ -229,7 +221,7 @@ let ident constr =
   else return @@ constr s
 ;;
 
-(*Pattern parsers*)
+(*Patterns parsers*)
 let parse_pattern_nill = sqr_parens skip_wspace >>| pNill
 let parse_pattern_any = skip_wspace *> char '_' >>| pAny
 let parse_pattern_val = ident pVal
@@ -260,8 +252,9 @@ let parse_pattern =
     [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parens self ]
 ;;
 
-(*==================*)
+(* ---------------- *)
 
+(* Expressions parsers *)
 let parse_ident = ident eidentifier
 let parse_const = const econst
 
@@ -435,10 +428,10 @@ let parse_list pack =
 let parse_list_cons pack =
   fix
   @@ fun self ->
-    skip_wspace
-    *>
-    let parse_expr =
-      choice
+  skip_wspace
+  *>
+  let parse_expr =
+    choice
       [ parens @@ pack.parse_tuple pack
       ; parens self
       ; parens @@ pack.parse_bin_op pack
@@ -451,10 +444,10 @@ let parse_list_cons pack =
       ; parse_const
       ; parse_ident
       ]
-    in
-    let left = parse_expr <* list_constr in
-    let right = skip_wspace *> (self <|> parse_expr) in
-    lift2 elistcons left right
+  in
+  let left = parse_expr <* list_constr in
+  let right = skip_wspace *> (self <|> parse_expr) in
+  lift2 elistcons left right
 ;;
 
 let parse_tuple pack =
