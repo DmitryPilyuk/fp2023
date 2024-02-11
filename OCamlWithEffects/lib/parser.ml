@@ -348,23 +348,24 @@ let parse_bin_op pack =
     in
     e >>= fun init -> go init
   in
-  let ( <||> ) = chainl1 in
-  parse_expr
-  <||> multiplication
-  <||> division
-  <||> addition
-  <||> subtraction
-  <||> larger
-  <||> largerEq
-  <||> less
-  <||> lessEq
-  <||> eqality
-  <||> neqality
-  <||> logand
-  <||> logor
-  >>= fun s ->
-  match s with
-  | EBinaryOperation (_, _, _) -> return s
+  List.fold_left
+    (fun acc x -> chainl1 acc x)
+    (chainl1 parse_expr multiplication)
+    [ division
+    ; addition
+    ; subtraction
+    ; larger
+    ; largerEq
+    ; less
+    ; lessEq
+    ; eqality
+    ; neqality
+    ; logand
+    ; logor
+    ]
+  >>= fun res ->
+  match res with
+  | EBinaryOperation (_, _, _) -> return res
   | _ -> fail "Error: not binary operation."
 ;;
 
@@ -556,6 +557,7 @@ let parse_application pack =
         choice
           [ parens @@ pack.parse_fun pack
           ; parens @@ pack.parse_if_then_else pack
+          ; parens @@ pack.parse_match_with pack
           ; parse_ident
           ]
       and operand_parser =
