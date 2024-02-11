@@ -609,10 +609,6 @@ let parsers input =
     ]
 ;;
 
-let parse_expr input =
-  parse_string ~consume:All (many (parsers default) <* skip_wspace) input
-;;
-
 let parse input =
-  parse_string ~consume:All (many (parse_declaration default) <* skip_wspace) input
+  parse_string ~consume:All (many (parsers default) <* skip_wspace) input
 ;;
