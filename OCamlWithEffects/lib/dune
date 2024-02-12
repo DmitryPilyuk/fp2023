@@ -8,6 +8,8 @@
   Ast
   Typedtree
   Interpreter
+  Errorsi
+  Pprinti
   Values
   Inferencer
   Errors
