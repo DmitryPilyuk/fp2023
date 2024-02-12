@@ -2,14 +2,15 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Ast
 open Typedtree
 
 type error =
   [ `Occurs_check
   | `Unification_failed of typ * typ
-  | `Unbound_variable of string
+  | `Unbound_variable of id
   | `Not_reachable
-  | `Several_bounds of string
+  | `Several_bounds of id
   ]
 
 (* Constructors for types *)

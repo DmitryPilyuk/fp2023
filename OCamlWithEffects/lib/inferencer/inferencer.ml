@@ -464,7 +464,6 @@ let infer_expr =
       let* sub2, t2 = helper env2 expr in
       let* sub3 = Subst.compose sub1 sub2 in
       return (sub3, t2)
-  | _ -> return (Subst.empty, tint)
   in
   helper
 ;;
