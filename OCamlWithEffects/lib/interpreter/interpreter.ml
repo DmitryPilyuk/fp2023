@@ -32,7 +32,7 @@ module Env (M: MONAD_ERROR) = struct
   let find_var env name =
     match find env name with
     | Some v -> return (env, v)
-    | None -> fail ("ddd") (* UNBOUND VALUE *)
+    | None -> fail (unbound_variable name) (* UNBOUND VALUE *)
   ;;
 end
 
