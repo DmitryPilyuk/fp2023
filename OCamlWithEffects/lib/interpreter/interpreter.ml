@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Parser
 open Values
 open Errorsi
 
@@ -74,6 +75,11 @@ module Interpreter (M: MONAD_ERROR) = struct
   | Not, VBool b -> return (env, vbool (not b))
   | Plus, _ | Minus, _ | Not, _ -> fail(type_error)
   | _ -> fail (non_existen_operation)
+
+  let rec eval_pattern env pat v =
+    match pat, v with
+    | PConst ( Int (i1) ), VInt i2 when i1 = i2 -> env
+  ;;
 
   let eval =
     let rec helper env = function
