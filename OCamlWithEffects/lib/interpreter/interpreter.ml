@@ -76,10 +76,52 @@ module Interpreter (M: MONAD_ERROR) = struct
   | Plus, _ | Minus, _ | Not, _ -> fail(type_error)
   | _ -> fail (non_existen_operation)
 
-  let rec eval_pattern env pat v =
-    match pat, v with
-    | PConst ( Int (i1) ), VInt i2 when i1 = i2 -> env
-  ;;
+  module Pattern = struct
+
+    type match_flag =
+    | Successful
+    | UnSuccessful
+
+    let eval_const_pattern env pat v = 
+      (* ПЕРЕДАВАТЬ ENV ИЛИ ВСЕГДА ДЛЕТАЬ ПУСТОЙ? *)
+      match pat, v with
+      | Int i1, VInt i2 when i1 = i2 -> return (Successful, env)
+      | Bool b1, VBool b2 when b1 = b2 -> return (Successful, env)
+      | Char c1, VChar c2 when c1 = c2 -> return (Successful, env)
+      | String s1, VString s2 when s1 = s2 -> return (Successful, env)
+      | Unit, VUnit -> return (Successful, env)
+      | Int _, VInt _ | Bool _, VBool _ 
+      | Char _, VChar _ | String _, VString _ -> return (UnSuccessful, env)
+      | _ -> fail(type_error) (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
+
+    let rec eval_pattern pat v =
+      let env = empty in
+      let rec helper =
+        match pat, v with
+        | PAny, _ -> return (Successful, env)
+        | PConst i, v -> eval_const_pattern env i v
+        | PNill, VList [] -> return (Successful, env)
+        | PVal name, v ->
+          let new_env = extend env name v in
+          return (Successful, new_env)
+        | PTuple pats, VTuple vs ->
+          let rec match_tuple env = function
+            | [], [] -> return (Successful, env)
+            | pat :: pats, v :: vs ->
+              let* flag, env = eval_pattern pat v in
+              let result =
+                match flag with
+                | Successful -> match_tuple env (pats, vs)
+                | UnSuccessful -> return (UnSuccessful, env)
+              in result
+            | _ -> return (UnSuccessful, env)
+          in
+          match_tuple env (pats, vs)
+        | _ -> fail(type_error) (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
+      in helper
+    ;;
+
+  end
 
   let eval =
     let rec helper env = function
@@ -102,10 +144,36 @@ module Interpreter (M: MONAD_ERROR) = struct
         | VBool false -> helper env b2
         in res
       | EFun (pat, expr) -> return (env, (vfun pat expr env))
+      | ETuple expr_list ->
+        (* насчет инвайромента подумать *)
+        let* env, values = list_and_tuple_helper env expr_list in
+        return (env, vtuple values)
+      | EList expr_list ->
+        (* насчет инвайромента подумать *)
+        let* env, values = list_and_tuple_helper env expr_list in
+        return (env, vlist values)
+      | EListCons (e1, e2) ->
+        let* _, v1 = helper env e1 in
+        let* _, v2 = helper env e2 in
+        let* values =
+          match v2 with
+          | VList v -> return (v1 :: v)
+          | _ -> fail (type_error)
+        in
+        return (env, vlist values)
       | EDeclaration (name, expr, None) ->
         let* env, v = helper env expr in
         let new_env = extend env name v in
         return (new_env, v)
+
+    and list_and_tuple_helper env = function
+    | [] -> return (env, [])
+    | expr :: rest ->
+      (* насчет инвайромента подумать *)
+      let* env, value = helper env expr in
+      let* env, rest_values = list_and_tuple_helper env rest in
+      return (env, value :: rest_values)
+
     in
     helper
   ;;
