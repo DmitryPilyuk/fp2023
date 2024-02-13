@@ -603,6 +603,7 @@ let parsers input =
     ; parse_tuple input
     ; parse_application input
     ; parse_fun input
+    ; parse_match_with input
     ; parse_if_then_else input
     ; parse_ident
     ; parse_const

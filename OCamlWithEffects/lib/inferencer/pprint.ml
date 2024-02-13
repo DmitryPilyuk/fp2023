@@ -71,7 +71,7 @@ let print_expr_type expr =
     let error_str = Format.asprintf "%a" pp_error x in
     Format.printf "%s\n" error_str
 ;;
-  
+
 let print_program_type program =
   match run_program_inferencer program with
   | Ok typ_list ->
