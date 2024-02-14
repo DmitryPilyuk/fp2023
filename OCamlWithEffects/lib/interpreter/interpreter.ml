@@ -13,11 +13,7 @@ module type MONAD_ERROR = sig
   val return : 'a -> ('a, 'e) t
   val fail : 'e -> ('a, 'e) t
   val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-
-  val ( let* )
-    :  ('a, 'e) t
-    -> ('a -> ('b, 'e) t)
-    -> ('b, 'e) t (* возможно вынести в модуль Syntax *)
+  val (let*) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t (* возможно вынести в модуль Syntax *)
 end
 
 module Env (M : MONAD_ERROR) = struct
@@ -212,6 +208,24 @@ module Interpreter (M : MONAD_ERROR) = struct
             | UnSuccessful -> fail(type_error) (* ДРУГУЮ ОШИБКУ *)
             in checker (* ИСПРАВИТЬ *)
           | _ -> fail (type_error))
+      | EMatchWith (expr, cases) ->
+        (* Добавить обработку случая, 
+           когда паттерн мэтчится с эксрешеном, 
+           но при этом следующий паттерн являтся не допустимым
+          и нужно кинуть ошибку *)
+        let* _, v = helper env expr in
+        let rec match_cases env = function
+          | [] -> fail (type_error) (* Исправить потом на другую ошибку *)
+          | (pat, expr) :: rest ->
+            let* flag, env' = Pattern.eval_pattern pat v in
+            match flag with
+            | Pattern.Successful -> 
+              let* _, result = helper env' expr in
+              return (env, result)
+            | Pattern.UnSuccessful -> match_cases env rest
+        in
+        match_cases env cases
+
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
