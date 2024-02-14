@@ -116,13 +116,13 @@ module Interpreter (M : MONAD_ERROR) = struct
           let rec match_tuple env = function
             | [], [] -> return (Successful, env)
             | pat :: pats, v :: vs ->
-              let* flag, env = eval_pattern pat v in
+              let* flag, pat_env = eval_pattern pat v in
+              let new_env = compose env pat_env in
               let result =
                 match flag with
-                | Successful -> match_tuple env (pats, vs)
-                | UnSuccessful -> return (UnSuccessful, env)
-              in
-              result
+                | Successful -> match_tuple new_env (pats, vs)
+                | UnSuccessful -> return (UnSuccessful, new_env)
+              in result
             | _ -> return (UnSuccessful, env)
           in
           match_tuple env (pats, vs)
