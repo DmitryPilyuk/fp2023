@@ -173,6 +173,17 @@ module Interpreter (M : MONAD_ERROR) = struct
             | _ -> return (UnSuccessful, env)
           in
           match_tuple env (pats, vs)
+        | PListCons (pat1, pat2), VList (v1 :: v2) ->
+          let* flag1, pat_env1 = eval_pattern pat1 v1 in
+          let* flag2, pat_env2 = eval_pattern pat2 (VList v2) in
+          let* env' =
+            match flag1, flag2 with
+            | Successful, Successful ->
+              let combined_env = compose pat_env1 pat_env2 in
+              return combined_env
+            | _ -> fail type_error (* Возможно, стоит вернуть другую ошибку*)
+          in
+          return (Successful, env')
         | _ -> fail type_error
         (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
       in
