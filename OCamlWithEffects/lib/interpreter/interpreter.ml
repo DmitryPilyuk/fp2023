@@ -40,6 +40,23 @@ module Env (M : MONAD_ERROR) = struct
     | None -> fail (unbound_variable name)
   ;;
   (* UNBOUND VALUE *)
+
+  let env_to_list env =
+    let bindings = Base.Map.to_alist env in
+    List.map (fun (k, v) -> (k, v)) bindings
+  ;;
+
+  let string_of_value = function
+  | VInt i -> string_of_int i
+  | VBool b -> string_of_bool b
+  | VChar c -> String.make 1 c
+  | VString s -> s
+  | VUnit -> "()"
+  | VFun _ -> "<fun>"
+  (* Добавьте другие варианты по мере необходимости *)
+
+  let print_environment_list env_list =
+    List.iter (fun (k, v) -> Printf.printf "%s: %s\n" k (string_of_value v)) env_list
 end
 
 module Interpreter (M : MONAD_ERROR) = struct
@@ -242,7 +259,24 @@ module Interpreter (M : MONAD_ERROR) = struct
     return (env, v)
   ;;
 
+  let run_program program =
+    let rec run_helper env = function
+      | [] -> return env
+      | expr :: rest ->
+        let* new_env, _ = eval env expr in
+        run_helper new_env rest
+    in
+    run_helper empty program
+  ;;
+
+  let run_program_print program = 
+    let* res = run_program program in
+    let env_list = env_to_list res in
+    print_environment_list env_list;
+    return ()
+
   let int_expr expr = interpret_expr empty expr
+
 end
 
 module Eval : MONAD_ERROR with type ('a, 'err) t = ('a, 'err) Result.t = struct
@@ -263,3 +297,4 @@ end
 module InterpreterR = Interpreter (Eval)
 
 let int_expr = InterpreterR.int_expr
+let run_program_print = InterpreterR.run_program_print

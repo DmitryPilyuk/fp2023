@@ -7,6 +7,7 @@ open Pprint
 open Pprinti
 open Typedtree
 open Inferencer
+open Interpreter
 
 (* let run_parser program = parse program
 
@@ -52,5 +53,14 @@ let run_interpret expr =
     match ast with
     | Ok ast -> print_expr_value (List.hd ast)
     | Error e -> Format.printf "%s\n" e
+  in typ
+;;
+
+let run_interpret2 expr =
+  let ast = parse expr in
+  let typ =
+    match ast with
+    | Ok ast -> run_program_print ast
+    (* | Error e -> Format.printf "%s\n" e *)
   in typ
 ;;
