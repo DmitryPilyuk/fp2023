@@ -13,7 +13,11 @@ module type MONAD_ERROR = sig
   val return : 'a -> ('a, 'e) t
   val fail : 'e -> ('a, 'e) t
   val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-  val (let*) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t (* возможно вынести в модуль Syntax *)
+
+  val ( let* )
+    :  ('a, 'e) t
+    -> ('a -> ('b, 'e) t)
+    -> ('b, 'e) t (* возможно вынести в модуль Syntax *)
 end
 
 module Env (M : MONAD_ERROR) = struct
@@ -28,35 +32,39 @@ module Env (M : MONAD_ERROR) = struct
   let empty : t = Base.Map.empty (module Base.String)
   let find env k = Base.Map.find env k
   let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
+
   (* let extend env key value = Base.Map.set env key value *)
   let compose env1 env2 =
-    Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env ->
-      extend acc_env key data
-    )
+    Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env -> extend acc_env key data)
+  ;;
 
   let find_var env name =
     match find env name with
     | Some v -> return (env, v)
     | None -> fail (unbound_variable name)
   ;;
+
   (* UNBOUND VALUE *)
 
   let env_to_list env =
     let bindings = Base.Map.to_alist env in
-    List.map (fun (k, v) -> (k, v)) bindings
+    List.map (fun (k, v) -> k, v) bindings
   ;;
 
   let string_of_value = function
-  | VInt i -> string_of_int i
-  | VBool b -> string_of_bool b
-  | VChar c -> String.make 1 c
-  | VString s -> s
-  | VUnit -> "()"
-  | VFun _ -> "<fun>"
+    | VInt i -> string_of_int i
+    | VBool b -> string_of_bool b
+    | VChar c -> String.make 1 c
+    | VString s -> s
+    | VUnit -> "()"
+    | VFun _ -> "<fun>"
+  ;;
+
   (* Добавьте другие варианты по мере необходимости *)
 
   let print_environment_list env_list =
     List.iter (fun (k, v) -> Printf.printf "%s: %s\n" k (string_of_value v)) env_list
+  ;;
 end
 
 module Interpreter (M : MONAD_ERROR) = struct
@@ -86,9 +94,30 @@ module Interpreter (M : MONAD_ERROR) = struct
       res
     | And, VBool b1, VBool b2 -> return (env, vbool (b1 && b2))
     | Or, VBool b1, VBool b2 -> return (env, vbool (b1 || b2))
-    | Add, _, _ | Sub, _, _ | Mul, _, _ | Div, _, _ | And, _, _ | Or, _, _ ->
-      fail type_error
-    | _ -> fail non_existen_operation
+    | Eq, VInt i1, VInt i2 -> return (env, vbool (i1 = i2))
+    | Eq, VChar c1, VChar c2 -> return (env, vbool (c1 = c2))
+    | Eq, VString s1, VString s2 -> return (env, vbool (s1 = s2))
+    | Eq, VBool b1, VBool b2 -> return (env, vbool (b1 = b2))
+    | NEq, VInt i1, VInt i2 -> return (env, vbool (i1 <> i2))
+    | NEq, VChar c1, VChar c2 -> return (env, vbool (c1 <> c2))
+    | NEq, VString s1, VString s2 -> return (env, vbool (s1 <> s2))
+    | NEq, VBool b1, VBool b2 -> return (env, vbool (b1 <> b2))
+    | Gt, VInt i1, VInt i2 -> return (env, vbool (i1 > i2))
+    | Lt, VInt i1, VInt i2 -> return (env, vbool (i1 < i2))
+    | Gte, VInt i1, VInt i2 -> return (env, vbool (i1 >= i2))
+    | Lte, VInt i1, VInt i2 -> return (env, vbool (i1 <= i2))
+    | Add, _, _
+    | Sub, _, _
+    | Mul, _, _
+    | Div, _, _
+    | And, _, _
+    | Or, _, _
+    | Eq, _, _
+    | NEq, _, _
+    | Gt, _, _
+    | Lt, _, _
+    | Gte, _, _
+    | Lte, _, _ -> fail type_error
   ;;
 
   let eval_un_op env = function
@@ -139,7 +168,8 @@ module Interpreter (M : MONAD_ERROR) = struct
                 match flag with
                 | Successful -> match_tuple new_env (pats, vs)
                 | UnSuccessful -> return (UnSuccessful, new_env)
-              in result
+              in
+              result
             | _ -> return (UnSuccessful, env)
           in
           match_tuple env (pats, vs)
@@ -211,38 +241,39 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _, v1 = helper env f in
         let* _, v2 = helper env e in
         (match v1 with
-          | VFun(pat, exp, fun_env) ->
-            let* flag, pat_env = Pattern.eval_pattern pat v2 in
-            let new_env = compose fun_env pat_env in
-            (* let* nenv, v = helper new_env exp in
-            return (env, v) *)
-            let checker =
-            match flag with
-            | Successful -> 
-              let new_env = compose fun_env pat_env in
-              let* _, v = helper new_env exp in
-              return (env, v)
-            | UnSuccessful -> fail(type_error) (* ДРУГУЮ ОШИБКУ *)
-            in checker (* ИСПРАВИТЬ *)
-          | _ -> fail (type_error))
+         | VFun (pat, exp, fun_env) ->
+           let* flag, pat_env = Pattern.eval_pattern pat v2 in
+           let new_env = compose fun_env pat_env in
+           (* let* nenv, v = helper new_env exp in
+              return (env, v) *)
+           let checker =
+             match flag with
+             | Successful ->
+               let new_env = compose fun_env pat_env in
+               let* _, v = helper new_env exp in
+               return (env, v)
+             | UnSuccessful -> fail type_error
+             (* ДРУГУЮ ОШИБКУ *)
+           in
+           checker (* ИСПРАВИТЬ *)
+         | _ -> fail type_error)
       | EMatchWith (expr, cases) ->
-        (* Добавить обработку случая, 
-           когда паттерн мэтчится с эксрешеном, 
+        (* Добавить обработку случая,
+           когда паттерн мэтчится с эксрешеном,
            но при этом следующий паттерн являтся не допустимым
-          и нужно кинуть ошибку *)
+           и нужно кинуть ошибку *)
         let* _, v = helper env expr in
         let rec match_cases env = function
-          | [] -> fail (type_error) (* Исправить потом на другую ошибку *)
+          | [] -> fail type_error (* Исправить потом на другую ошибку *)
           | (pat, expr) :: rest ->
             let* flag, env' = Pattern.eval_pattern pat v in
-            match flag with
-            | Pattern.Successful -> 
-              let* _, result = helper env' expr in
-              return (env, result)
-            | Pattern.UnSuccessful -> match_cases env rest
+            (match flag with
+             | Pattern.Successful ->
+               let* _, result = helper env' expr in
+               return (env, result)
+             | Pattern.UnSuccessful -> match_cases env rest)
         in
         match_cases env cases
-
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
@@ -269,14 +300,14 @@ module Interpreter (M : MONAD_ERROR) = struct
     run_helper empty program
   ;;
 
-  let run_program_print program = 
+  let run_program_print program =
     let* res = run_program program in
     let env_list = env_to_list res in
     print_environment_list env_list;
     return ()
+  ;;
 
   let int_expr expr = interpret_expr empty expr
-
 end
 
 module Eval : MONAD_ERROR with type ('a, 'err) t = ('a, 'err) Result.t = struct
