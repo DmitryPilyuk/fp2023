@@ -32,6 +32,11 @@ module Env (M : MONAD_ERROR) = struct
   let empty : t = Base.Map.empty (module Base.String)
   let find env k = Base.Map.find env k
   let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
+  (* let extend env key value = Base.Map.set env key value *)
+  let compose env1 env2 =
+    Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env ->
+      extend acc_env key data
+    )
 
   let find_var env name =
     match find env name with
@@ -189,16 +194,24 @@ module Interpreter (M : MONAD_ERROR) = struct
         let new_env = extend env name v in
         let* _, v = helper new_env expression in
         return (env, v)
-      | EApplication (e1, e2) ->
-        let* _, v1 = helper env e1 in
-        let* _, v2 = helper env e2 in
+      | EApplication (f, e) ->
+        let* _, v1 = helper env f in
+        let* _, v2 = helper env e in
         (match v1 with
-         | VFun (pat, expr, fun_env) ->
-           let* flag, new_env = Pattern.eval_pattern pat v2 in
-           (match flag with
-            | Successful -> helper new_env expr
-            | UnSuccessful -> fail type_error)
-         | _ -> fail type_error)
+          | VFun(pat, exp, fun_env) ->
+            let* flag, pat_env = Pattern.eval_pattern pat v2 in
+            let new_env = compose fun_env pat_env in
+            (* let* nenv, v = helper new_env exp in
+            return (env, v) *)
+            let checker =
+            match flag with
+            | Successful -> 
+              let new_env = compose fun_env pat_env in
+              let* _, v = helper new_env exp in
+              return (env, v)
+            | UnSuccessful -> fail(type_error) (* ДРУГУЮ ОШИБКУ *)
+            in checker (* ИСПРАВИТЬ *)
+          | _ -> fail (type_error))
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
