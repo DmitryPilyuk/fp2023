@@ -31,7 +31,10 @@ module Env (M : MONAD_ERROR) = struct
 
   let empty : t = Base.Map.empty (module Base.String)
   let find env k = Base.Map.find env k
-  let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
+  let extend env key value = 
+    let env = Base.Map.remove env key in
+    Base.Map.set env key value
+    (* Base.Map.update env key ~f:(fun _ -> value) *)
 
   (* let extend env key value = Base.Map.set env key value *)
   let compose env1 env2 =
@@ -45,26 +48,6 @@ module Env (M : MONAD_ERROR) = struct
   ;;
 
   (* UNBOUND VALUE *)
-
-  let env_to_list env =
-    let bindings = Base.Map.to_alist env in
-    List.map (fun (k, v) -> k, v) bindings
-  ;;
-
-  let string_of_value = function
-    | VInt i -> string_of_int i
-    | VBool b -> string_of_bool b
-    | VChar c -> String.make 1 c
-    | VString s -> s
-    | VUnit -> "()"
-    | VFun _ -> "<fun>"
-  ;;
-
-  (* Добавьте другие варианты по мере необходимости *)
-
-  let print_environment_list env_list =
-    List.iter (fun (k, v) -> Printf.printf "%s: %s\n" k (string_of_value v)) env_list
-  ;;
 end
 
 module Interpreter (M : MONAD_ERROR) = struct
@@ -296,12 +279,12 @@ module Interpreter (M : MONAD_ERROR) = struct
     helper
   ;;
 
-  let interpret_expr env expr =
-    let* env, v = eval env expr in
-    return (env, v)
+  let interpret_expr expr =
+    let* env, v = eval empty expr in
+    return v
   ;;
 
-  let run_program program =
+  let interpret_program program =
     let rec run_helper env = function
       | [] -> return env
       | expr :: rest ->
@@ -311,14 +294,6 @@ module Interpreter (M : MONAD_ERROR) = struct
     run_helper empty program
   ;;
 
-  let run_program_print program =
-    let* res = run_program program in
-    let env_list = env_to_list res in
-    print_environment_list env_list;
-    return ()
-  ;;
-
-  let int_expr expr = interpret_expr empty expr
 end
 
 module Eval : MONAD_ERROR with type ('a, 'err) t = ('a, 'err) Result.t = struct
@@ -338,5 +313,5 @@ end
 
 module InterpreterR = Interpreter (Eval)
 
-let int_expr = InterpreterR.int_expr
-let run_program_print = InterpreterR.run_program_print
+let run_expr_interpreter = InterpreterR.interpret_expr
+let run_program_interpreter = InterpreterR.interpret_program

@@ -2,65 +2,82 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Ast
 open Parser
 open Pprint
 open Pprinti
+open Pprintp
 open Typedtree
 open Inferencer
 open Interpreter
+open Errorsp
 
-(* let run_parser program = parse program
-
-let ast program = 
-  match run_parser program with
-  | Ok ast -> ast
-  | Error e -> Format.printf "%s\n" e
-;;
-
-let run_inferencer ast =
-  match ast with
-  | hd :: tl -> run_program_inferencer ast
-  | expr -> [ run_expr_inferencer expr ]
-;;
-
-let run program =
-  let ast = ast program in
-  let inferencer_result = run_inferencer ast in
-  print_program_type inferencer_result
-;; *)
-
-let run program =
-  let ast = parse program in
+let inference_program ast =
   let typ = 
-    match ast with
-    | Ok ast -> print_program_type ast
-    | Error e -> Format.printf "%s\n" e
-  in typ
-;; 
-
-let run_expr expr =
-  let ast = parse expr in
-  let typ =
-    match ast with
-    | Ok ast -> print_expr_type (List.hd ast)
-    | Error e -> Format.printf "%s\n" e
+    (match run_program_inferencer ast with
+    | Ok (env, names_list) -> print_program_type env names_list
+    | Error e -> print_inferencer_error e)
   in typ
 ;;
 
-let run_interpret expr =
-  let ast = parse expr in
+let inference_expr ast =
   let typ =
-    match ast with
-    | Ok ast -> print_expr_value (List.hd ast)
-    | Error e -> Format.printf "%s\n" e
-  in typ
+      (match run_expr_inferencer ast with
+      | Ok typ -> print_expr_type typ
+      | Error e -> print_inferencer_error e)
+    in typ
 ;;
 
-let run_interpret2 expr =
-  let ast = parse expr in
-  let typ =
+let inference program =
+  let ast = parse program in
+  let res =
     match ast with
-    | Ok ast -> run_program_print ast
-    (* | Error e -> Format.printf "%s\n" e *)
-  in typ
+    | Ok ast -> 
+      (match determine_ast_type ast with
+      | FreeExpression -> 
+        (match ast with
+        | [x] -> inference_expr x
+        | _ -> print_parser_error (syntax_error)) (* Unreachable *)
+      | DeclarationList -> inference_program ast
+      | MixedList -> print_parser_error (syntax_error))
+    | Error _ -> print_parser_error (syntax_error)
+  in res
+;;
+
+let interpret_program ast =
+  let res = 
+    (match run_program_inferencer ast with
+    | Ok (typ_env, names_list) -> 
+      (match run_program_interpreter ast with
+      | Ok val_env -> print_program_value val_env typ_env names_list
+      | Error e -> print_interpreter_error e)
+    | Error e -> print_inferencer_error e)
+  in res
+;;
+
+let interpret_expr ast =
+  let res = 
+    (match run_expr_inferencer ast with
+    | Ok typ -> 
+      (match run_expr_interpreter ast with
+      | Ok value -> print_expr_value value typ
+      | Error e -> print_interpreter_error e)
+    | Error e -> print_inferencer_error e)
+  in res
+;;
+
+let interpret program =
+  let ast = parse program in
+  let res =
+    match ast with
+    | Ok ast -> 
+      (match determine_ast_type ast with
+      | FreeExpression -> 
+        (match ast with
+        | [x] -> interpret_expr x
+        | _ -> print_parser_error (syntax_error)) (* Unreachable *)
+      | DeclarationList -> interpret_program ast
+      | MixedList -> print_parser_error (syntax_error))
+    | Error _ -> print_parser_error (syntax_error)
+  in res
 ;;

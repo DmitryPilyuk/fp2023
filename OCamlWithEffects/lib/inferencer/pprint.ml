@@ -62,26 +62,20 @@ let pp_error ppf error =
       Format.fprintf ppf "Variable '%s' is bound several times" name
 ;;
 
-let print_expr_type expr =
-  match run_expr_inferencer expr with
-  | Ok typ ->
-    let typ_str = Format.asprintf "%a" pp_type typ in
-    Format.printf "%s\n" typ_str
-  | Error x ->
-    let error_str = Format.asprintf "%a" pp_error x in
-    Format.printf "%s\n" error_str
+let print_inferencer_error e =
+  let error_str = Format.asprintf "%a" pp_error e in
+  Format.printf "%s\n" error_str
 ;;
 
-let print_program_type program =
-  match run_program_inferencer program with
-  | Ok typ_list ->
-    List.iter (fun (name, typ) -> 
-      let typ_str = Format.asprintf "%a" pp_type typ in
-      match name with
-      | "" -> Format.printf "- : %s\n" typ_str
-      | _ -> Format.printf "val %s : %s\n" name typ_str
-    ) typ_list
-  | Error e ->
-    let error_str = Format.asprintf "%a" pp_error e in
-    Format.printf "%s\n" error_str
+let type_to_string typ = Format.asprintf "%a" pp_type typ
+let expr_without_name typ = "- : " ^ (type_to_string typ)
+let expr_with_name name typ = "val " ^ name ^ " : " ^ (type_to_string typ)
+
+let print_expr_type typ = Format.printf "%s\n" (expr_without_name typ)
+
+let print_program_type env names_list =
+  Base.List.iter names_list ~f:(fun name ->
+    match Base.Map.find env name with
+    | Some (Scheme (_, typ)) -> Format.printf "%s\n" (expr_with_name name typ)
+    | _ -> Format.printf "") (* Unreachable *)
 ;;

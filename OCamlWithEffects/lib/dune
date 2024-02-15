@@ -4,8 +4,10 @@
  (name ocaml_with_effects_lib)
  (public_name OCamlWithEffects.Lib)
  (modules
-  Parser
   Ast
+  Parser
+  Pprintp
+  Errorsp
   Typedtree
   Interpreter
   Errorsi

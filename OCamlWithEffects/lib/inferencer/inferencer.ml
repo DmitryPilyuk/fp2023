@@ -223,7 +223,14 @@ module TypeEnv = struct
 
   let extend : t -> string -> scheme -> t =
     fun env key schema ->
-      Base.Map.update env key ~f:(fun _ -> schema)
+      Base.Map.update env key (fun _ -> schema)
+  ;;
+
+  let tester = fun env key -> Base.Map.remove env 
+
+      (* Base.Map.set env ~key:key ~data:schema *)
+
+      (* Base.Map.update env key ~f:(fun _ -> schema) *)
   ;;
 
   let apply : t -> Subst.t -> t =
@@ -472,20 +479,21 @@ let infer_program env program =
   let rec helper acc = function
   | [] -> acc
   | hd :: tl ->
-    let* acc_env, acc_ty = acc in
+    let* acc_env, acc_names = acc in
     match hd with
     | EDeclaration (name, expr1, None) | ERecDeclaration (name, expr1, None) -> 
       let* sub, ty = infer_expr acc_env hd in
       let new_env = TypeEnv.extend acc_env name (Scheme(TVarSet.empty, ty)) in
-      let new_acc = return (new_env, (name, ty) :: acc_ty) in
+      let update_name_list name names_list =
+        (match List.mem name names_list with
+        | true -> name :: List.filter ((<>) name) names_list
+        | false -> name :: names_list) in
+      let new_acc = return (new_env, update_name_list name acc_names) in
       helper new_acc tl
-    | _ -> 
-      let* sub, ty = infer_expr acc_env hd in
-      let new_acc = return (acc_env, ("", ty) :: acc_ty) in
-      helper new_acc tl
+    | _ -> (env, []) (* Unreachable *)
     in
-    let* _, ty_list = helper (return(env, [])) program in
-    return (List.rev ty_list)
+    let* env, names = helper (return(env, [])) program in
+    return (env, List.rev names)
 ;;
 
 

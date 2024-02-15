@@ -613,3 +613,25 @@ let parsers input =
 let parse input =
   parse_string ~consume:All (many (parsers default) <* skip_wspace) input
 ;;
+
+type ast_type =
+  | DeclarationList
+  | MixedList
+  | FreeExpression
+
+let determine_ast_type ast =
+  match ast with
+  | [expr] ->
+    (match expr with
+    | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> DeclarationList
+    | _ -> FreeExpression)
+  | _ ->
+    let rec helper ast =
+      (match ast with
+      | [] -> DeclarationList
+      | hd :: tl ->
+        (match hd with
+        | EDeclaration(_, _, None) | ERecDeclaration (_, _, None) -> helper tl
+        | _ -> MixedList))
+    in helper ast
+;;

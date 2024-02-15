@@ -4,6 +4,8 @@
 
 open Values
 open Interpreter
+open Typedtree
+open Pprint
 
 let pp_value ppf typ =
   let rec helper ppf = function
@@ -36,12 +38,20 @@ let pp_error ppf error =
   | `Type_error -> Format.fprintf ppf "Type error."
 ;;
 
-let print_expr_value expr =
-  match InterpreterR.int_expr expr with
-  | Ok (env, value) ->
-    let typ_str = Format.asprintf "%a" pp_value value in
-    Format.printf "%s\n" typ_str
-  | Error x ->
-    let error_str = Format.asprintf "%a" pp_error x in
-    Format.printf "%s\n" error_str
+let print_interpreter_error e =
+  let error_str = Format.asprintf "%a" pp_error e in
+  Format.printf "%s\n" error_str
+;;
+
+let value_to_string value = Format.asprintf "%a" pp_value value
+
+let print_expr_value value typ = Format.printf "%s = %s \n" (expr_without_name typ) (value_to_string value)
+
+let print_program_value val_env typ_env names_list =
+  Base.List.iter names_list ~f:(fun name ->
+    let typ = Base.Map.find typ_env name in
+    let value = Base.Map.find val_env name in
+    match (typ, value) with
+    | Some (Scheme (_, typ)), Some value -> Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
+    | _, _ -> Printf.printf "") (* Unreacheable *)
 ;;
