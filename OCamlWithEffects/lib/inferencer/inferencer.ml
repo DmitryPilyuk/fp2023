@@ -483,7 +483,7 @@ let infer_program env program =
         | false -> name :: names_list) in
       let new_acc = return (new_env, update_name_list name acc_names) in
       helper new_acc tl
-    | _ -> (env, []) (* Unreachable *)
+    | _ -> return (env, []) (* Unreachable *)
     in
     let* env, names = helper (return(env, [])) program in
     return (env, List.rev names)
