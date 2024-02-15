@@ -226,13 +226,6 @@ module TypeEnv = struct
       Base.Map.update env key (fun _ -> schema)
   ;;
 
-  let tester = fun env key -> Base.Map.remove env 
-
-      (* Base.Map.set env ~key:key ~data:schema *)
-
-      (* Base.Map.update env key ~f:(fun _ -> schema) *)
-  ;;
-
   let apply : t -> Subst.t -> t =
     fun env sub -> Base.Map.map env ~f:(Scheme.apply sub)
   ;;

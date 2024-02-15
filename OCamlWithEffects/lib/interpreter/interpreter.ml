@@ -25,18 +25,10 @@ module Env (M : MONAD_ERROR) = struct
 
   type t = enviroment
 
-  (* let find_var env name =
-     match  with
-     | pattern -> pattern *)
-
   let empty : t = Base.Map.empty (module Base.String)
   let find env k = Base.Map.find env k
-  let extend env key value = 
-    let env = Base.Map.remove env key in
-    Base.Map.set env key value
-    (* Base.Map.update env key ~f:(fun _ -> value) *)
+  let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
 
-  (* let extend env key value = Base.Map.set env key value *)
   let compose env1 env2 =
     Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env -> extend acc_env key data)
   ;;
