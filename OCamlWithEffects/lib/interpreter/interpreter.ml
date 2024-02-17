@@ -215,41 +215,41 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _, v = helper new_env expression in
         return (env, v)
       | ERecDeclaration (name, expr, None) ->
+        (* Если будет время, обработать случа let rec f = f *)
+        (* Если будет время, вынести в отдельную взаимно-рекурсивную с helper функцию общие выражения у одного и следующего блока*)
         let* env, v = helper env expr in
-        (match v with
-         | VFun (_, _, _) ->
-           let v = vrecfun name v in
-           let new_env = extend env name v in
-           return (new_env, v)
-         | _ -> fail type_error)
+        let res = 
+          (match v with
+          | VFun (_, _, _) -> vrecfun name v
+          | _ -> v) in
+        let new_env = extend env name res in
+        return (new_env, res)
       | ERecDeclaration (name, expr, Some expression) ->
+        (* Если будет время, обработать случа let rec f = f *)
         let* env, v = helper env expr in
-        (match v with
-         | VFun (_, _, _) ->
-           let v = vrecfun name v in
-           let new_env = extend env name v in
-           let* _, v = helper new_env expression in
-           return (env, v)
-         | _ -> fail type_error)
+        let res = 
+          (match v with
+          | VFun (_, _, _) -> vrecfun name v
+          | _ -> v) in
+        let new_env = extend env name res in
+        let* _, v = helper new_env expression in
+        return (env, v)
       | EApplication (f, e) ->
+        (* Если будет время, вынести checker в отдельную взаимно-рекурсивную с helper функцию *)
         let* _, v1 = helper env f in
         let* _, v2 = helper env e in
         (match v1 with
          | VFun (pat, exp, fun_env) ->
            let* flag, pat_env = Pattern.eval_pattern pat v2 in
-           (* let* nenv, v = helper new_env exp in
-              return (env, v) *)
            let checker =
              match flag with
              | Successful ->
                let new_env = compose fun_env pat_env in
                let* _, v = helper new_env exp in
                return (env, v)
-             | UnSuccessful -> fail type_error
-             (* ДРУГУЮ ОШИБКУ *)
+             | UnSuccessful -> fail type_error (* Другая ошибка *)
            in
            checker
-           (* ИСПРАВИТЬ *)
          | VRecFun (name, v) ->
            (match v with
             | VFun (pat, exp, fun_env) ->
@@ -261,16 +261,19 @@ module Interpreter (M : MONAD_ERROR) = struct
                   let new_env = compose fun_env pat_env in
                   let* _, v = helper new_env exp in
                   return (env, v)
-                | UnSuccessful -> fail type_error
+                | UnSuccessful -> fail type_error (* Другая ошибка *)
               in
               checker
             | _ -> fail type_error)
          | _ -> fail type_error)
       | EMatchWith (expr, cases) ->
-        (* Добавить обработку случая,
+        (* Если будет время, добавить обработку случая,
            когда паттерн мэтчится с эксрешеном,
            но при этом следующий паттерн являтся не допустимым
-           и нужно кинуть ошибку *)
+           и нужно кинуть ошибку.
+
+           Делать в последнюю очередь, так как это уже обрабатывается в inferece.
+           *)
         let* _, v = helper env expr in
         let rec match_cases env = function
           | [] -> fail type_error (* Исправить потом на другую ошибку *)

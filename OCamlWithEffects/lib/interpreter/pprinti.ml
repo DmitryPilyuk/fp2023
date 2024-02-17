@@ -25,6 +25,7 @@ let pp_value ppf typ =
         "@[<hov>[%s]@]"
         (String.concat "; " (List.map (fun v -> Format.asprintf "%a" helper v) l))
   | VFun _ -> Format.fprintf ppf "<fun>"
+  | VRecFun _ -> Format.fprintf ppf "<fun>"
 in 
 helper ppf typ
 ;;
