@@ -216,20 +216,27 @@ module Interpreter (M : MONAD_ERROR) = struct
         return (env, v)
       | ERecDeclaration (name, expr, None) ->
         let* env, v = helper env expr in
-        let new_env = extend env name v in
-        return (new_env, v)
+        (match v with
+         | VFun (_, _, _) ->
+           let v = vrecfun name v in
+           let new_env = extend env name v in
+           return (new_env, v)
+         | _ -> fail type_error)
       | ERecDeclaration (name, expr, Some expression) ->
         let* env, v = helper env expr in
-        let new_env = extend env name v in
-        let* _, v = helper new_env expression in
-        return (env, v)
+        (match v with
+         | VFun (_, _, _) ->
+           let v = vrecfun name v in
+           let new_env = extend env name v in
+           let* _, v = helper new_env expression in
+           return (env, v)
+         | _ -> fail type_error)
       | EApplication (f, e) ->
         let* _, v1 = helper env f in
         let* _, v2 = helper env e in
         (match v1 with
          | VFun (pat, exp, fun_env) ->
            let* flag, pat_env = Pattern.eval_pattern pat v2 in
-           let new_env = compose fun_env pat_env in
            (* let* nenv, v = helper new_env exp in
               return (env, v) *)
            let checker =
@@ -241,7 +248,23 @@ module Interpreter (M : MONAD_ERROR) = struct
              | UnSuccessful -> fail type_error
              (* ДРУГУЮ ОШИБКУ *)
            in
-           checker (* ИСПРАВИТЬ *)
+           checker
+           (* ИСПРАВИТЬ *)
+         | VRecFun (name, v) ->
+           (match v with
+            | VFun (pat, exp, fun_env) ->
+              let fun_env = extend fun_env name v1 in
+              let* flag, pat_env = Pattern.eval_pattern pat v2 in
+              let checker =
+                match flag with
+                | Successful ->
+                  let new_env = compose fun_env pat_env in
+                  let* _, v = helper new_env exp in
+                  return (env, v)
+                | UnSuccessful -> fail type_error
+              in
+              checker
+            | _ -> fail type_error)
          | _ -> fail type_error)
       | EMatchWith (expr, cases) ->
         (* Добавить обработку случая,
@@ -285,7 +308,6 @@ module Interpreter (M : MONAD_ERROR) = struct
     in
     run_helper empty program
   ;;
-
 end
 
 module Eval : MONAD_ERROR with type ('a, 'err) t = ('a, 'err) Result.t = struct

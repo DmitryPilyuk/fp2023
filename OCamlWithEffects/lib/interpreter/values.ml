@@ -13,6 +13,7 @@ type value =
   | VTuple of value list
   | VList of value list
   | VFun of pattern * expr * enviroment
+  | VRecFun of id * value
 
 and enviroment = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -25,4 +26,5 @@ let vunit = VUnit
 let vtuple l = VTuple l
 let vlist l = VList l
 let vfun pat exp env = VFun (pat, exp, env)
+let vrecfun ident v = VRecFun (ident, v)
 (* ---------------- *)
