@@ -40,6 +40,21 @@ type pattern =
   | PVal of id
   | PTuple of pattern list
   | PListCons of pattern * pattern
+  | EffectPattern of effect_pattern
+[@@deriving show { with_path = false }]
+
+and effect_pattern =
+  | PEffectWithArguments of id * pattern
+  | PEffectWithoutArguments of id
+  | PEffectHolder of pattern * id
+[@@deriving show { with_path = false }]
+
+type effect_types_annotation =
+  | APrim of const
+  | AArrow of effect_types_annotation * effect_types_annotation
+  | ATuple of effect_types_annotation list
+  | AList of effect_types_annotation
+  | AEffect of effect_types_annotation
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -51,11 +66,16 @@ type expr =
   | EFun of pattern * expr
   | EDeclaration of id * expr * expr option
   | ERecDeclaration of id * expr * expr option
+  | EEffectDelaration of id * effect_types_annotation
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | EListCons of expr * expr
   | ETuple of expr list
   | EMatchWith of expr * (pattern * expr) list
+  | EEffectWithArguments of id * expr
+  | EEffectWithoutArguments of id
+  | EEffectPerform of expr
+  | EEffectContinue of id * expr
 [@@deriving show { with_path = false }]
 
 type program = expr list [@@deriving show { with_path = false }]
