@@ -4,6 +4,8 @@
 
 type id = string [@@deriving show { with_path = false }]
 
+type continue_val = Continue of id [@@deriving show { with_path = false }]
+
 type const =
   | Char of char
   | String of string
@@ -42,7 +44,7 @@ type pattern =
   | PListCons of pattern * pattern
   | PEffectWithArguments of id * pattern
   | PEffectWithoutArguments of id
-  | PEffectHolder of pattern * id
+  | PEffectHolder of pattern * continue_val
 [@@deriving show { with_path = false }]
 
 type effect_types_annotation =
@@ -75,7 +77,7 @@ type expr =
   | ETuple of expr list
   | EMatchWith of expr * (pattern * expr) list
   | EEffectPerform of expr
-  | EEffectContinue of id * expr
+  | EEffectContinue of continue_val * expr
 [@@deriving show { with_path = false }]
 
 type program = expr list [@@deriving show { with_path = false }]

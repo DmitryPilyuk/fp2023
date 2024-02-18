@@ -44,6 +44,8 @@ let eefect_with_arguments name arg = EEffectWithArguments (name, arg)
 let eeffect_perform expr = EEffectPerform expr
 let eeffect_continue cont expr = EEffectContinue (cont, expr)
 
+let econt_val n = Continue n
+
 let aint = AInt
 let abool = ABool
 let achar = AChar
@@ -83,14 +85,16 @@ let pConst c = PConst c
 let pVal v = PVal v
 let pListCons l r = PListCons (l, r)
 let pTuple l = PTuple l
+let peffect_without_args name = PEffectWithoutArguments name
+let peffect_with_args name arg = PEffectWithArguments (name, arg)
+let pffect_holder pat cont = PEffectHolder (pat, cont)
 (* ---------------- *)
 
-(* Constructors for patterns *)
+(* Constructors for annotations *)
 let aArrow a1 a2 = AArrow (a1, a2)
 let aTuple l = ATuple l
 let aList a = AList a
 let aEffect a = AEffect a
-
 (* ----------------- *)
 let is_keyword = function
   | "and"
@@ -263,17 +267,23 @@ let parse_pattern_any = skip_wspace *> char '_' >>| pAny
 let parse_pattern_val = ident pVal
 let parse_pattern_const = const pConst
 let parse_pattern_list_constr = list_constr *> return pListCons
+let parse_pattern_effect_without_args = skip_wspace *> lift peffect_without_args parse_capitalized_name
+let parse_pattern_with_args pattern_parser = skip_wspace *> lift2 peffect_with_args parse_capitalized_name pattern_parser
+let parse_pattern_effect_holder pattern_parser = 
+  let parse_eff = skip_wspace *> string "effect" in
+  let parse_continue = parse_uncapitalized_name >>| econt_val in
+  parse_eff *> skip_wspace *> lift2 pffect_holder pattern_parser parse_continue
 
 let parse_tuple p_pattern =
   parens
   @@ lift2
-       (fun h tl -> pTuple @@ (h :: tl))
-       p_pattern
-       (many1 (skip_wspace *> string "," *> p_pattern))
+        (fun h tl -> pTuple @@ (h :: tl))
+        p_pattern
+        (many1 (skip_wspace *> string "," *> p_pattern))
 ;;
 
 let parse_primitive_pattern =
-  choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const ]
+  choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const; parse_pattern_effect_without_args ]
 ;;
 
 let parse_pattern =
@@ -285,7 +295,7 @@ let parse_pattern =
     chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr
   in
   choice
-    [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parens self ]
+    [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parse_pattern_effect_holder self; parse_pattern_with_args self; parens self ]
 ;;
 
 (* ---------------- *)
@@ -402,7 +412,8 @@ let parse_continue pack =
          ]
      in
      let parse_continue = skip_wspace *> string "continue" *> skip_wspace in
-     lift2 eeffect_continue (parse_continue *> parse_uncapitalized_name) (skip_wspace *> parse_expr))
+     let parse_continue_content = parse_uncapitalized_name >>| econt_val in
+     lift2 eeffect_continue (parse_continue *> parse_continue_content) (skip_wspace *> parse_expr))
 ;;
 
 let parse_fun pack =
@@ -639,6 +650,7 @@ let parse_match_with pack =
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_if_then_else pack
+      ; pack.parse_continue pack
       ; parse_const
       ; parse_ident
       ]
