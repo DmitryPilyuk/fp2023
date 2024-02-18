@@ -85,6 +85,13 @@ let pListCons l r = PListCons (l, r)
 let pTuple l = PTuple l
 (* ---------------- *)
 
+(* Constructors for patterns *)
+let aArrow a1 a2 = AArrow (a1, a2)
+let aTuple l = ATuple l
+let aList a = AList a
+let aEffect a = AEffect a
+
+(* ----------------- *)
 let is_keyword = function
   | "and"
   | "as"
@@ -279,6 +286,45 @@ let parse_pattern =
   in
   choice
     [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parens self ]
+;;
+
+(* ---------------- *)
+
+(* Types annotation parsers *)
+let parse_prim_type =
+  choice
+    [ skip_wspace *> string "int" *> return AInt
+    ; skip_wspace *> string "bool" *> return ABool
+    ; skip_wspace *> string "char" *> return AChar
+    ; skip_wspace *> string "string" *> return AString
+    ; skip_wspace *> string "unit" *> return AUnit
+    ]
+;;
+
+let parse_arrow p_type = lift2 aArrow (p_type <* skip_wspace <* string "->") p_type
+
+let parse_tuple_type p_type =
+  lift2
+    (fun h tl -> aTuple @@ (h :: tl))
+    p_type
+    (many1 (skip_wspace *> string "*" *> p_type))
+;;
+
+let parse_list_type p_type = lift aList (p_type <* skip_wspace <* string "list")
+let parse_effect_type p_type = lift aEffect (p_type <* skip_wspace <* string "effect")
+
+let parse_type_annotation =
+  fix
+  @@ fun self ->
+  skip_wspace
+  *> choice
+       [ parse_prim_type
+       ; parse_arrow self
+       ; parse_tuple_type self
+       ; parse_list_type self
+       ; parse_effect_type self
+       ; parens self
+       ]
 ;;
 
 (* ---------------- *)
@@ -718,9 +764,7 @@ let parsers input =
     ]
 ;;
 
-let parse input =
-  parse_string ~consume:All (many (parsers default) <* skip_wspace) input
-;;
+let parse input = parse_string ~consume:All (many (parsers default) <* skip_wspace) input
 
 type ast_type =
   | DeclarationList
@@ -729,17 +773,18 @@ type ast_type =
 
 let determine_ast_type ast =
   match ast with
-  | [expr] ->
+  | [ expr ] ->
     (match expr with
-    | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> DeclarationList
-    | _ -> FreeExpression)
+     | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> DeclarationList
+     | _ -> FreeExpression)
   | _ ->
     let rec helper ast =
-      (match ast with
+      match ast with
       | [] -> DeclarationList
       | hd :: tl ->
         (match hd with
-        | EDeclaration(_, _, None) | ERecDeclaration (_, _, None) -> helper tl
-        | _ -> MixedList))
-    in helper ast
+         | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> helper tl
+         | _ -> MixedList)
+    in
+    helper ast
 ;;
