@@ -50,7 +50,11 @@ and effect_pattern =
 [@@deriving show { with_path = false }]
 
 type effect_types_annotation =
-  | APrim of const
+  | AInt
+  | ABool
+  | AChar
+  | AString
+  | AUnit
   | AArrow of effect_types_annotation * effect_types_annotation
   | ATuple of effect_types_annotation list
   | AList of effect_types_annotation
@@ -66,7 +70,7 @@ type expr =
   | EFun of pattern * expr
   | EDeclaration of id * expr * expr option
   | ERecDeclaration of id * expr * expr option
-  | EEffectDelaration of id * effect_types_annotation
+  | EEffectDeclaration of id * effect_types_annotation
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | EListCons of expr * expr

@@ -40,10 +40,6 @@ type pattern =
   | PVal of id
   | PTuple of pattern list
   | PListCons of pattern * pattern
-  | EffectPattern of effect_pattern
-[@@deriving show { with_path = false }]
-
-and effect_pattern =
   | PEffectWithArguments of id * pattern
   | PEffectWithoutArguments of id
   | PEffectHolder of pattern * id
@@ -70,7 +66,7 @@ type expr =
   | EFun of pattern * expr
   | EDeclaration of id * expr * expr option
   | ERecDeclaration of id * expr * expr option
-  | EEffectDelaration of id * effect_types_annotation
+  | EEffectDeclaration of id * effect_types_annotation
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | EListCons of expr * expr
