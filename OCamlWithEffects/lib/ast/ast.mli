@@ -67,13 +67,13 @@ type expr =
   | EDeclaration of id * expr * expr option
   | ERecDeclaration of id * expr * expr option
   | EEffectDeclaration of id * effect_types_annotation
+  | EEffectWithArguments of id * expr
+  | EEffectWithoutArguments of id
   | EIfThenElse of expr * expr * expr
   | EList of expr list
   | EListCons of expr * expr
   | ETuple of expr list
   | EMatchWith of expr * (pattern * expr) list
-  | EEffectWithArguments of id * expr
-  | EEffectWithoutArguments of id
   | EEffectPerform of expr
   | EEffectContinue of id * expr
 [@@deriving show { with_path = false }]

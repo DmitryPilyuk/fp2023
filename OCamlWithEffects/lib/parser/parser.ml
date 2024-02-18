@@ -15,6 +15,9 @@ type dispatch =
   ; parse_fun : dispatch -> expr Angstrom.t
   ; parse_match_with : dispatch -> expr Angstrom.t
   ; parse_if_then_else : dispatch -> expr Angstrom.t
+  ; parse_effect_with_arguments : dispatch -> expr Angstrom.t
+  ; parse_perform : dispatch -> expr Angstrom.t
+  ; parse_continue : dispatch -> expr Angstrom.t
   }
 
 (* Constructors for expressions *)
@@ -35,6 +38,21 @@ let rec_declraration func_name expression exp_in =
 
 let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, false_b)
 let ematch_with expression cases = EMatchWith (expression, cases)
+
+let eeffect_without_arguments name = EEffectWithoutArguments name
+let eefect_with_arguments name arg = EEffectWithArguments (name, arg)
+let eeffect_perform expr = EEffectPerform expr
+let eeffect_continue cont expr = EEffectContinue (cont, expr)
+
+let aint = AInt
+let abool = ABool
+let achar = AChar
+let astring = AString
+let aunit = AUnit
+let aarrow l r = AArrow (l, r)
+let alist a = AList a
+let atuple alist = ATuple alist
+let aeffect a = AEffect a
 (* ---------------- *)
 
 (* Constructors for binary operations *)
@@ -75,9 +93,11 @@ let is_keyword = function
   | "begin"
   | "class"
   | "constraint"
+  | "continue"
   | "do"
   | "done"
   | "downto"
+  | "effect"
   | "else"
   | "end"
   | "exception"
@@ -110,6 +130,7 @@ let is_keyword = function
   | "of"
   | "open"
   | "or"
+  | "perform"
   | "private"
   | "rec"
   | "sig"
@@ -192,6 +213,14 @@ let parse_uncapitalized_name =
   else fail "Parsing error: not an uncapitalized entity."
 ;;
 
+let parse_capitalized_name =
+  parse_name
+  >>= fun name ->
+  if (is_upper name.[0]) && is_keyword name != true
+  then return name
+  else fail "Parsing error: not an capitalized entity."
+;;
+
 let parse_cint = take_while1 is_digit >>| int_of_string >>| fun x -> Int x
 let parse_cstring = char '"' *> take_while (( != ) '"') <* char '"' >>| fun x -> String x
 let parse_cchar = char '\'' *> any_char <* char '\'' >>| fun x -> Char x
@@ -257,6 +286,78 @@ let parse_pattern =
 (* Expressions parsers *)
 let parse_ident = ident eidentifier
 let parse_const = const econst
+
+let parse_effect_without_arguments =
+  fix
+  @@ fun self ->
+  skip_wspace 
+  *> (parens self <|>
+      lift
+        eeffect_without_arguments
+        parse_capitalized_name
+  )
+;;
+
+let parse_effect_with_arguments pack =
+  fix
+  @@ fun self ->
+  let parse_expr = 
+    choice [ parens @@ pack.parse_tuple pack
+    ; parens @@ pack.parse_list_cons pack
+    ; parens @@ pack.parse_bin_op pack
+    ; parens @@ pack.parse_un_op pack
+    ; pack.parse_list pack
+    (* ; parens @@ pack.parse_perform pack *)
+    ; parens @@ pack.parse_application pack
+    ; parens @@ pack.parse_fun pack
+    ; parens @@ pack.parse_if_then_else pack
+    ; parens @@ pack.parse_match_with pack
+    ; parse_const
+    ; parse_ident ]
+  in
+  skip_wspace
+  *> (parens self <|>
+      lift2
+        eefect_with_arguments
+        parse_capitalized_name
+        parse_expr)
+;;
+
+let parse_perform pack =
+  fix
+  @@ fun self ->
+    let perform = skip_wspace *> string "perform" <* skip_wspace in
+  skip_wspace *>
+  lift
+    eeffect_perform
+    (perform *> (parse_effect_with_arguments pack <|> parse_effect_without_arguments))
+;;
+
+let parse_continue pack =
+  fix
+  @@ fun self ->
+  skip_wspace
+  *> (parens self
+     <|>
+     let parse_expr =
+       choice
+         [ parens @@ pack.parse_tuple pack
+         ; parens @@ pack.parse_list_cons pack
+         ; parens @@ pack.parse_bin_op pack
+         ; parens @@ pack.parse_un_op pack
+         ; pack.parse_list pack
+         ; parens @@ pack.parse_perform pack
+         ; parens @@ pack.parse_application pack
+         ; parens @@ pack.parse_fun pack
+         ; parens @@ pack.parse_if_then_else pack
+         ; parens @@ pack.parse_match_with pack
+         ; parse_const
+         ; parse_ident
+         ]
+     in
+     let parse_continue = skip_wspace *> string "continue" *> skip_wspace in
+     lift2 eeffect_continue (parse_continue *> parse_uncapitalized_name) (skip_wspace *> parse_expr))
+;;
 
 let parse_fun pack =
   let parse_expr =
@@ -590,6 +691,9 @@ let default =
   ; parse_fun
   ; parse_match_with
   ; parse_if_then_else
+  ; parse_effect_with_arguments
+  ; parse_perform
+  ; parse_continue
   }
 ;;
 
@@ -607,6 +711,10 @@ let parsers input =
     ; parse_if_then_else input
     ; parse_ident
     ; parse_const
+    ; parse_effect_without_arguments
+    ; parse_effect_with_arguments input
+    ; parse_perform input
+    ; parse_continue input
     ]
 ;;
 
