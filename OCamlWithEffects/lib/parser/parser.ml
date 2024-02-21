@@ -40,6 +40,7 @@ let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, fal
 let ematch_with expression cases = EMatchWith (expression, cases)
 let eeffect_without_arguments name = EEffectWithoutArguments name
 let eefect_with_arguments name arg = EEffectWithArguments (name, arg)
+let eeffect_declaration name typ = EEffectDeclaration (name, typ)
 let eeffect_perform expr = EEffectPerform expr
 let eeffect_continue cont expr = EEffectContinue (cont, expr)
 let econt_val n = Continue n
@@ -48,10 +49,7 @@ let abool = ABool
 let achar = AChar
 let astring = AString
 let aunit = AUnit
-let aarrow l r = AArrow (l, r)
-let alist a = AList a
-let atuple alist = ATuple alist
-let aeffect a = AEffect a
+
 (* ---------------- *)
 
 (* Constructors for binary operations *)
@@ -88,10 +86,10 @@ let pffect_handler pat cont = PEffectHandler (pat, cont)
 (* ---------------- *)
 
 (* Constructors for annotations *)
-let aArrow a1 a2 = AArrow (a1, a2)
-let aTuple l = ATuple l
-let aList a = AList a
-let aEffect a = AEffect a
+let aarrow l r = AArrow (l, r)
+let alist a = AList a
+let atuple alist = ATuple alist
+let aeffect a = AEffect a
 
 (* ----------------- *)
 let is_keyword = function
@@ -330,17 +328,17 @@ let parse_prim_type p_type =
     ]
 ;;
 
-let parse_arrow = skip_wspace *> string "->" *> return (fun t1 t2 -> aArrow t1 t2)
+let parse_arrow = skip_wspace *> string "->" *> return (fun t1 t2 -> aarrow t1 t2)
 
 let parse_tuple_type p_type =
   lift2
-    (fun h tl -> aTuple @@ (h :: tl))
+    (fun h tl -> atuple @@ (h :: tl))
     p_type
     (many1 (skip_wspace *> string "*" *> p_type))
 ;;
 
-let parse_list_type p_type = lift aList (p_type <* skip_wspace <* string "list")
-let parse_effect_type p_type = lift aEffect (p_type <* skip_wspace <* string "effect")
+let parse_list_type p_type = lift alist (p_type <* skip_wspace <* string "list")
+let parse_effect_type p_type = lift aeffect (p_type <* skip_wspace <* string "effect")
 
 let parse_type_annotation =
   fix
@@ -426,6 +424,13 @@ let parse_continue pack =
         eeffect_continue
         (parse_continue *> parse_continue_content)
         (skip_wspace *> parse_expr))
+;;
+
+let parse_effect_declaration =
+  lift2
+    eeffect_declaration
+    (skip_wspace *> string "effect" *> parse_capitalized_name)
+    (skip_wspace *> string ":" *> parse_type_annotation)
 ;;
 
 let parse_fun pack =
@@ -782,6 +787,7 @@ let parsers input =
     ; parse_ident
     ; parse_const
     ; parse_effect_without_arguments
+    ; parse_effect_declaration
     ; parse_effect_with_arguments input
     ; parse_perform input
     ; parse_continue input
@@ -789,7 +795,6 @@ let parsers input =
 ;;
 
 let parse input = parse_string ~consume:All (many (parsers default) <* skip_wspace) input
-let parse2 input = parse_string ~consume:All parse_type_annotation input
 
 type ast_type =
   | DeclarationList
