@@ -38,14 +38,11 @@ let rec_declraration func_name expression exp_in =
 
 let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, false_b)
 let ematch_with expression cases = EMatchWith (expression, cases)
-
 let eeffect_without_arguments name = EEffectWithoutArguments name
 let eefect_with_arguments name arg = EEffectWithArguments (name, arg)
 let eeffect_perform expr = EEffectPerform expr
 let eeffect_continue cont expr = EEffectContinue (cont, expr)
-
 let econt_val n = Continue n
-
 let aint = AInt
 let abool = ABool
 let achar = AChar
@@ -87,7 +84,7 @@ let pListCons l r = PListCons (l, r)
 let pTuple l = PTuple l
 let peffect_without_args name = PEffectWithoutArguments name
 let peffect_with_args name arg = PEffectWithArguments (name, arg)
-let pffect_holder pat cont = PEffectHolder (pat, cont)
+let pffect_handler pat cont = PEffectHandler (pat, cont)
 (* ---------------- *)
 
 (* Constructors for annotations *)
@@ -95,6 +92,7 @@ let aArrow a1 a2 = AArrow (a1, a2)
 let aTuple l = ATuple l
 let aList a = AList a
 let aEffect a = AEffect a
+
 (* ----------------- *)
 let is_keyword = function
   | "and"
@@ -227,7 +225,7 @@ let parse_uncapitalized_name =
 let parse_capitalized_name =
   parse_name
   >>= fun name ->
-  if (is_upper name.[0]) && is_keyword name != true
+  if is_upper name.[0] && is_keyword name != true
   then return name
   else fail "Parsing error: not an capitalized entity."
 ;;
@@ -267,23 +265,37 @@ let parse_pattern_any = skip_wspace *> char '_' >>| pAny
 let parse_pattern_val = ident pVal
 let parse_pattern_const = const pConst
 let parse_pattern_list_constr = list_constr *> return pListCons
-let parse_pattern_effect_without_args = skip_wspace *> lift peffect_without_args parse_capitalized_name
-let parse_pattern_with_args pattern_parser = skip_wspace *> lift2 peffect_with_args parse_capitalized_name pattern_parser
-let parse_pattern_effect_holder pattern_parser = 
+
+let parse_pattern_effect_without_args =
+  skip_wspace *> lift peffect_without_args parse_capitalized_name
+;;
+
+let parse_pattern_with_args pattern_parser =
+  skip_wspace *> lift2 peffect_with_args parse_capitalized_name pattern_parser
+;;
+
+let parse_pattern_effect_handler pattern_parser =
   let parse_eff = skip_wspace *> string "effect" in
   let parse_continue = parse_uncapitalized_name >>| econt_val in
-  parse_eff *> skip_wspace *> lift2 pffect_holder pattern_parser parse_continue
+  parse_eff *> skip_wspace *> lift2 pffect_handler pattern_parser parse_continue
+;;
 
 let parse_tuple p_pattern =
   parens
   @@ lift2
-        (fun h tl -> pTuple @@ (h :: tl))
-        p_pattern
-        (many1 (skip_wspace *> string "," *> p_pattern))
+       (fun h tl -> pTuple @@ (h :: tl))
+       p_pattern
+       (many1 (skip_wspace *> string "," *> p_pattern))
 ;;
 
 let parse_primitive_pattern =
-  choice [ parse_pattern_nill; parse_pattern_any; parse_pattern_val; parse_pattern_const; parse_pattern_effect_without_args ]
+  choice
+    [ parse_pattern_nill
+    ; parse_pattern_any
+    ; parse_pattern_val
+    ; parse_pattern_const
+    ; parse_pattern_effect_without_args
+    ]
 ;;
 
 let parse_pattern =
@@ -295,15 +307,22 @@ let parse_pattern =
     chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr
   in
   choice
-    [ parse_pattern_list_constr; parse_primitive_pattern; parse_tuple self; parse_pattern_effect_holder self; parse_pattern_with_args self; parens self ]
+    [ parse_pattern_list_constr
+    ; parse_primitive_pattern
+    ; parse_tuple self
+    ; parse_pattern_effect_handler self
+    ; parse_pattern_with_args self
+    ; parens self
+    ]
 ;;
 
 (* ---------------- *)
 
 (* Types annotation parsers *)
-let parse_prim_type =
+let parse_prim_type p_type =
   choice
-    [ skip_wspace *> string "int" *> return AInt
+    [ parens p_type
+    ; skip_wspace *> string "int" *> return AInt
     ; skip_wspace *> string "bool" *> return ABool
     ; skip_wspace *> string "char" *> return AChar
     ; skip_wspace *> string "string" *> return AString
@@ -311,7 +330,7 @@ let parse_prim_type =
     ]
 ;;
 
-let parse_arrow p_type = lift2 aArrow (p_type <* skip_wspace <* string "->") p_type
+let parse_arrow = skip_wspace *> string "->" *> return (fun t1 t2 -> aArrow t1 t2)
 
 let parse_tuple_type p_type =
   lift2
@@ -327,14 +346,12 @@ let parse_type_annotation =
   fix
   @@ fun self ->
   skip_wspace
-  *> choice
-       [ parse_prim_type
-       ; parse_arrow self
-       ; parse_tuple_type self
-       ; parse_list_type self
-       ; parse_effect_type self
-       ; parens self
-       ]
+  *>
+  let parse_t = parse_prim_type self in
+  let parse_t = parse_list_type parse_t <|> parse_t in
+  let parse_t = parse_effect_type parse_t <|> parse_t in
+  let parse_t = parse_tuple_type parse_t <|> parse_t in
+  chainr1 parse_t parse_arrow
 ;;
 
 (* ---------------- *)
@@ -346,47 +363,39 @@ let parse_const = const econst
 let parse_effect_without_arguments =
   fix
   @@ fun self ->
-  skip_wspace 
-  *> (parens self <|>
-      lift
-        eeffect_without_arguments
-        parse_capitalized_name
-  )
+  skip_wspace *> (parens self <|> lift eeffect_without_arguments parse_capitalized_name)
 ;;
 
 let parse_effect_with_arguments pack =
   fix
   @@ fun self ->
-  let parse_expr = 
-    choice [ parens @@ pack.parse_tuple pack
-    ; parens @@ pack.parse_list_cons pack
-    ; parens @@ pack.parse_bin_op pack
-    ; parens @@ pack.parse_un_op pack
-    ; pack.parse_list pack
-    (* ; parens @@ pack.parse_perform pack *)
-    ; parens @@ pack.parse_application pack
-    ; parens @@ pack.parse_fun pack
-    ; parens @@ pack.parse_if_then_else pack
-    ; parens @@ pack.parse_match_with pack
-    ; parse_const
-    ; parse_ident ]
+  let parse_expr =
+    choice
+      [ parens @@ pack.parse_tuple pack
+      ; parens @@ pack.parse_list_cons pack
+      ; parens @@ pack.parse_bin_op pack
+      ; parens @@ pack.parse_un_op pack
+      ; pack.parse_list pack (* ; parens @@ pack.parse_perform pack *)
+      ; parens @@ pack.parse_application pack
+      ; parens @@ pack.parse_fun pack
+      ; parens @@ pack.parse_if_then_else pack
+      ; parens @@ pack.parse_match_with pack
+      ; parse_const
+      ; parse_ident
+      ]
   in
   skip_wspace
-  *> (parens self <|>
-      lift2
-        eefect_with_arguments
-        parse_capitalized_name
-        parse_expr)
+  *> (parens self <|> lift2 eefect_with_arguments parse_capitalized_name parse_expr)
 ;;
 
 let parse_perform pack =
   fix
   @@ fun self ->
-    let perform = skip_wspace *> string "perform" <* skip_wspace in
-  skip_wspace *>
-  lift
-    eeffect_perform
-    (perform *> (parse_effect_with_arguments pack <|> parse_effect_without_arguments))
+  let perform = skip_wspace *> string "perform" <* skip_wspace in
+  skip_wspace
+  *> lift
+       eeffect_perform
+       (perform *> (parse_effect_with_arguments pack <|> parse_effect_without_arguments))
 ;;
 
 let parse_continue pack =
@@ -394,26 +403,29 @@ let parse_continue pack =
   @@ fun self ->
   skip_wspace
   *> (parens self
-     <|>
-     let parse_expr =
-       choice
-         [ parens @@ pack.parse_tuple pack
-         ; parens @@ pack.parse_list_cons pack
-         ; parens @@ pack.parse_bin_op pack
-         ; parens @@ pack.parse_un_op pack
-         ; pack.parse_list pack
-         ; parens @@ pack.parse_perform pack
-         ; parens @@ pack.parse_application pack
-         ; parens @@ pack.parse_fun pack
-         ; parens @@ pack.parse_if_then_else pack
-         ; parens @@ pack.parse_match_with pack
-         ; parse_const
-         ; parse_ident
-         ]
-     in
-     let parse_continue = skip_wspace *> string "continue" *> skip_wspace in
-     let parse_continue_content = parse_uncapitalized_name >>| econt_val in
-     lift2 eeffect_continue (parse_continue *> parse_continue_content) (skip_wspace *> parse_expr))
+      <|>
+      let parse_expr =
+        choice
+          [ parens @@ pack.parse_tuple pack
+          ; parens @@ pack.parse_list_cons pack
+          ; parens @@ pack.parse_bin_op pack
+          ; parens @@ pack.parse_un_op pack
+          ; pack.parse_list pack
+          ; parens @@ pack.parse_perform pack
+          ; parens @@ pack.parse_application pack
+          ; parens @@ pack.parse_fun pack
+          ; parens @@ pack.parse_if_then_else pack
+          ; parens @@ pack.parse_match_with pack
+          ; parse_const
+          ; parse_ident
+          ]
+      in
+      let parse_continue = skip_wspace *> string "continue" *> skip_wspace in
+      let parse_continue_content = parse_uncapitalized_name >>| econt_val in
+      lift2
+        eeffect_continue
+        (parse_continue *> parse_continue_content)
+        (skip_wspace *> parse_expr))
 ;;
 
 let parse_fun pack =
@@ -777,6 +789,7 @@ let parsers input =
 ;;
 
 let parse input = parse_string ~consume:All (many (parsers default) <* skip_wspace) input
+let parse2 input = parse_string ~consume:All parse_type_annotation input
 
 type ast_type =
   | DeclarationList

@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type id = string [@@deriving show { with_path = false }]
-
 type continue_val = Continue of id [@@deriving show { with_path = false }]
 
 type const =
@@ -44,7 +43,7 @@ type pattern =
   | PListCons of pattern * pattern
   | PEffectWithArguments of id * pattern
   | PEffectWithoutArguments of id
-  | PEffectHolder of pattern * continue_val
+  | PEffectHandler of pattern * continue_val
 [@@deriving show { with_path = false }]
 
 type effect_types_annotation =
