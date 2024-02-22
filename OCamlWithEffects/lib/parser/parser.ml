@@ -6,6 +6,9 @@ open Ast
 open Auxiliary
 open Angstrom
 
+(* Dispatch recording is needed to call parsers at a point,
+where they have not yet been declared, but are declared later *)
+
 type dispatch =
   { parse_un_op : dispatch -> expr Angstrom.t
   ; parse_bin_op : dispatch -> expr Angstrom.t
@@ -20,6 +23,8 @@ type dispatch =
   ; parse_perform : dispatch -> expr Angstrom.t
   ; parse_continue : dispatch -> expr Angstrom.t
   }
+
+(* Helper parsers *)
 
 let skip_wspace = skip_while is_whitespace
 let skip_wspace1 = take_while1 is_whitespace
@@ -44,6 +49,8 @@ let list_sep =
        | Some c when c != ']' -> fail "Error: Expected semicolon or end of list"
        | _ -> return ())
 ;;
+
+(* ---------------- *)
 
 (* Name parsers *)
 
