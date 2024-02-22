@@ -37,6 +37,7 @@ let pp_error ppf error =
   | `Non_existen_operation -> Format.fprintf ppf "Non-existent operation."
   | `Non_existen_type -> Format.fprintf ppf "Non-existent type."
   | `Type_error -> Format.fprintf ppf "Type error."
+  | `Unbound_handler id -> Format.fprintf ppf "Unbound variable '%s'." id
 ;;
 
 let print_interpreter_error e =

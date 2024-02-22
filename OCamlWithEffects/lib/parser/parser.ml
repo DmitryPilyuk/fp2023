@@ -450,6 +450,7 @@ let parse_match_with pack =
       ; pack.parse_fun pack
       ; pack.parse_if_then_else pack
       ; pack.parse_continue pack
+      ; pack.parse_perform pack
       ; parse_const
       ; parse_ident
       ]
@@ -475,6 +476,7 @@ let parse_declaration pack =
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_match_with pack
+      ; pack.parse_try_with pack
       ; self
       ; pack.parse_if_then_else pack
       ; parse_const
@@ -525,6 +527,7 @@ let parse_application pack =
           ; parens self
           ; parens @@ pack.parse_fun pack
           ; parens @@ parse_match_with pack
+          ; parens @@ pack.parse_perform pack
           ; parens @@ pack.parse_if_then_else pack
           ; parse_const
           ; parse_ident

@@ -7,6 +7,7 @@ open Ast
 type error =
   [ `Devision_by_zero
   | `Unbound_variable of id
+  | `Unbound_handler of id
   | `Non_existen_operation
   | `Non_existen_type
   | `Type_error
@@ -18,4 +19,5 @@ let unbound_variable name = `Unbound_variable name
 let non_existen_operation = `Non_existen_operation
 let non_existen_type = `Non_existen_type
 let type_error = `Type_error
+let unbound_handler name = `Unbound_handler name
 (* ---------------- *)

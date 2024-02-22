@@ -35,52 +35,74 @@ module Env (M : MONAD_ERROR) = struct
 
   let find_var env name =
     match find env name with
-    | Some v -> return (env, v)
+    | Some v -> return v
     | None -> fail (unbound_variable name)
   ;;
 
   (* UNBOUND VALUE *)
 end
 
+module Handlers (M : MONAD_ERROR) = struct
+  open M
+
+  type t = handlers
+
+  let empty_handler : t = Base.Map.empty (module Base.String)
+  let find_handler env k = Base.Map.find env k
+  let extend_handler env key value = Base.Map.update env key ~f:(fun _ -> value)
+
+  let compose_handlers env1 env2 =
+    Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env -> extend_handler acc_env key data)
+  ;;
+
+  let find_handler handlers name =
+    match find_handler handlers name with
+    | Some v -> return (handlers, v)
+    | None -> fail (unbound_handler name) (* другую ошибку *)
+  ;;
+
+end
+
 module Interpreter (M : MONAD_ERROR) = struct
   open M
   open Env (M)
+  open Handlers (M)
 
-  let eval_const env = function
+  let eval_const env handlers = function
     (* нужно in в eval или пусть глобальной будет? *)
-    | Int i -> return (env, vint i)
-    | Bool b -> return (env, vbool b)
-    | Unit -> return (env, vunit)
-    | Char c -> return (env, vchar c)
-    | String s -> return (env, vstring s)
+    | Int i -> return (env, handlers, vint i)
+    | Bool b -> return (env, handlers, vbool b)
+    | Unit -> return (env, handlers, vunit)
+    | Char c -> return (env, handlers, vchar c)
+    | String s -> return (env, handlers, vstring s)
     | _ -> fail non_existen_type
   ;;
 
-  let eval_bin_op env = function
-    | Add, VInt i1, VInt i2 -> return (env, vint (i1 + i2))
-    | Sub, VInt i1, VInt i2 -> return (env, vint (i1 - i2))
-    | Mul, VInt i1, VInt i2 -> return (env, vint (i1 * i2))
+  let eval_bin_op env handlers = function
+    | Add, VInt i1, VInt i2 -> return (env, handlers, vint (i1 + i2))
+    | Sub, VInt i1, VInt i2 -> return (env, handlers, vint (i1 - i2))
+    | Mul, VInt i1, VInt i2 -> return (env, handlers, vint (i1 * i2))
     | Div, VInt i1, VInt i2 ->
       let res =
         match i2 with
         | 0 -> fail devision_by_zero
-        | other -> return (env, vint (i1 / i2))
+        | other -> return (env, handlers, vint (i1 / i2))
       in
       res
-    | And, VBool b1, VBool b2 -> return (env, vbool (b1 && b2))
-    | Or, VBool b1, VBool b2 -> return (env, vbool (b1 || b2))
-    | Eq, VInt i1, VInt i2 -> return (env, vbool (i1 = i2))
-    | Eq, VChar c1, VChar c2 -> return (env, vbool (c1 = c2))
-    | Eq, VString s1, VString s2 -> return (env, vbool (s1 = s2))
-    | Eq, VBool b1, VBool b2 -> return (env, vbool (b1 = b2))
-    | NEq, VInt i1, VInt i2 -> return (env, vbool (i1 <> i2))
-    | NEq, VChar c1, VChar c2 -> return (env, vbool (c1 <> c2))
-    | NEq, VString s1, VString s2 -> return (env, vbool (s1 <> s2))
-    | NEq, VBool b1, VBool b2 -> return (env, vbool (b1 <> b2))
-    | Gt, VInt i1, VInt i2 -> return (env, vbool (i1 > i2))
-    | Lt, VInt i1, VInt i2 -> return (env, vbool (i1 < i2))
-    | Gte, VInt i1, VInt i2 -> return (env, vbool (i1 >= i2))
-    | Lte, VInt i1, VInt i2 -> return (env, vbool (i1 <= i2))
+    | And, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 && b2))
+    | Or, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 || b2))
+    | Eq, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 = i2))
+    | Eq, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 = c2))
+    | Eq, VString s1, VString s2 -> return (env, handlers, vbool (s1 = s2))
+    | Eq, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 = b2))
+    | NEq, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 <> i2))
+    | NEq, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 <> c2))
+    | NEq, VString s1, VString s2 -> return (env, handlers, vbool (s1 <> s2))
+    | NEq, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 <> b2))
+    | Gt, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 > i2))
+    | Lt, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 < i2))
+    | Gte, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 >= i2))
+    | Lte, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 <= i2))
     | Add, _, _
     | Sub, _, _
     | Mul, _, _
@@ -95,10 +117,10 @@ module Interpreter (M : MONAD_ERROR) = struct
     | Lte, _, _ -> fail type_error
   ;;
 
-  let eval_un_op env = function
-    | Plus, VInt i -> return (env, vint (+i))
-    | Minus, VInt i -> return (env, vint (-i))
-    | Not, VBool b -> return (env, vbool (not b))
+  let eval_un_op env handlers = function
+    | Plus, VInt i -> return (env, handlers, vint (+i))
+    | Minus, VInt i -> return (env, handlers, vint (-i))
+    | Not, VBool b -> return (env, handlers, vbool (not b))
     | Plus, _ | Minus, _ | Not, _ -> fail type_error
     | _ -> fail non_existen_operation
   ;;
@@ -159,85 +181,107 @@ module Interpreter (M : MONAD_ERROR) = struct
             | _ -> fail type_error (* Возможно, стоит вернуть другую ошибку*)
           in
           return (Successful, env')
+        | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
+          (match name1 = name2 with
+          | true -> return (Successful, env)
+          | false -> return (UnSuccessful, env))
+        | PEffectWithArguments (name1, pattern1), VEffectWithArguments (name2, value2) ->
+          (match name1 = name2 with
+          | false -> return (UnSuccessful, env)
+          | true ->
+            let* flag, new_env = eval_pattern pattern1 value2 in
+            (match flag with
+            | Successful -> return (Successful, new_env)
+            | UnSuccessful -> return (UnSuccessful, env))
+          )
         | _ -> fail type_error
         (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
       in
       helper
     ;;
+
+    (* let rec eval_handler hand v =
+      let handlers = empty_handler in
+      let res = match hand, v with
+      | EffectHandler (pat, expr, value), (VEffectWithoutArgs name as v)
+      | EffectHandler (pat, expr, value), (VEffectWithArgs (name, _) as v) ->  *)
+    
   end
 
   let eval =
-    let rec helper env = function
-      | EConst c -> eval_const env c
-      | EIdentifier name -> find_var env name
+    let rec helper env handlers = function
+      | EConst c -> eval_const env handlers c
+      | EIdentifier name ->
+        let* v = find_var env name in
+        return (env, handlers, v)
       | EUnaryOperation (op, expr) ->
-        let* _, v = helper env expr in
-        let res = eval_un_op env (op, v) in
+        let* _, _, v = helper env handlers expr in
+        let res = eval_un_op env handlers (op, v) in
         res
       | EBinaryOperation (op, expr1, expr2) ->
-        let* _, v1 = helper env expr1 in
-        let* _, v2 = helper env expr2 in
-        let res = eval_bin_op env (op, v1, v2) in
+        let* _, _, v1 = helper env handlers expr1 in
+        let* _, _, v2 = helper env handlers expr2 in
+        let res = eval_bin_op env handlers (op, v1, v2) in
         res
       | EIfThenElse (cond, b1, b2) ->
-        let* _, v = helper env cond in
+        let* _, _, v = helper env handlers cond in
         let res =
           match v with
-          | VBool true -> helper env b1
-          | VBool false -> helper env b2
+          | VBool true -> helper env handlers b1
+          | VBool false -> helper env handlers b2
         in
         res
-      | EFun (pat, expr) -> return (env, vfun pat expr env)
+      | EFun (pat, expr) -> return (env, handlers, vfun pat expr env)
       | ETuple expr_list ->
         (* насчет инвайромента подумать *)
         let* env, values = list_and_tuple_helper env expr_list in
-        return (env, vtuple values)
+        return (env, handlers, vtuple values)
       | EList expr_list ->
         (* насчет инвайромента подумать *)
         let* env, values = list_and_tuple_helper env expr_list in
-        return (env, vlist values)
+        return (env, handlers, vlist values)
       | EListCons (e1, e2) ->
-        let* _, v1 = helper env e1 in
-        let* _, v2 = helper env e2 in
+        let* _, _, v1 = helper env handlers e1 in
+        let* _, _, v2 = helper env handlers e2 in
         let* values =
           match v2 with
           | VList v -> return (v1 :: v)
           | _ -> fail type_error
         in
-        return (env, vlist values)
+        return (env, handlers, vlist values)
       | EDeclaration (name, expr, None) ->
-        let* env, v = helper env expr in
+        let* env, _, v = helper env handlers expr in
         let new_env = extend env name v in
-        return (new_env, v)
+        return (new_env, handlers, v)
       | EDeclaration (name, expr, Some expression) ->
-        let* env, v = helper env expr in
+        let* env, _, v = helper env handlers expr in
         let new_env = extend env name v in
-        let* _, v = helper new_env expression in
-        return (env, v)
+        let* _, _, v = helper new_env handlers expression in
+        return (env, handlers, v)
       | ERecDeclaration (name, expr, None) ->
         (* Если будет время, обработать случа let rec f = f *)
         (* Если будет время, вынести в отдельную взаимно-рекурсивную с helper функцию общие выражения у одного и следующего блока*)
-        let* env, v = helper env expr in
+        let* env, _, v = helper env handlers expr in
         let res = 
           (match v with
           | VFun (_, _, _) -> vrecfun name v
           | _ -> v) in
         let new_env = extend env name res in
-        return (new_env, res)
+        return (new_env, handlers, res)
       | ERecDeclaration (name, expr, Some expression) ->
         (* Если будет время, обработать случа let rec f = f *)
-        let* env, v = helper env expr in
+        let* env, _, v = helper env handlers expr in
         let res = 
           (match v with
           | VFun (_, _, _) -> vrecfun name v
           | _ -> v) in
         let new_env = extend env name res in
-        let* _, v = helper new_env expression in
-        return (env, v)
+        let* _, _, v = helper new_env handlers expression in
+        return (env, handlers, v)
       | EApplication (f, e) ->
         (* Если будет время, вынести checker в отдельную взаимно-рекурсивную с helper функцию *)
-        let* _, v1 = helper env f in
-        let* _, v2 = helper env e in
+        let* _, _, v1 = helper env handlers f in
+        let* _, _, v2 = helper env handlers e in
         (match v1 with
          | VFun (pat, exp, fun_env) ->
            let* flag, pat_env = Pattern.eval_pattern pat v2 in
@@ -245,8 +289,8 @@ module Interpreter (M : MONAD_ERROR) = struct
              match flag with
              | Successful ->
                let new_env = compose fun_env pat_env in
-               let* _, v = helper new_env exp in
-               return (env, v)
+               let* _, _, v = helper new_env handlers exp in
+               return (env, handlers, v)
              | UnSuccessful -> fail type_error (* Другая ошибка *)
            in
            checker
@@ -259,8 +303,8 @@ module Interpreter (M : MONAD_ERROR) = struct
                 match flag with
                 | Successful ->
                   let new_env = compose fun_env pat_env in
-                  let* _, v = helper new_env exp in
-                  return (env, v)
+                  let* _, _, v = helper new_env handlers exp in
+                  return (env, handlers, v)
                 | UnSuccessful -> fail type_error (* Другая ошибка *)
               in
               checker
@@ -274,15 +318,15 @@ module Interpreter (M : MONAD_ERROR) = struct
 
            Делать в последнюю очередь, так как это уже обрабатывается в inferece.
            *)
-        let* _, v = helper env expr in
+        let* _, _, v = helper env handlers expr in
         let rec match_cases env = function
           | [] -> fail type_error (* Исправить потом на другую ошибку *)
           | (pat, expr) :: rest ->
             let* flag, env' = Pattern.eval_pattern pat v in
             (match flag with
              | Pattern.Successful ->
-               let* _, result = helper env' expr in
-               return (env, result)
+               let* _, _, result = helper env' handlers expr in
+               return (env, handlers, result)
              | Pattern.UnSuccessful -> match_cases env rest)
         in
         match_cases env cases
@@ -290,7 +334,7 @@ module Interpreter (M : MONAD_ERROR) = struct
       | [] -> return (env, [])
       | expr :: rest ->
         (* насчет инвайромента подумать *)
-        let* env, value = helper env expr in
+        let* env, _, value = helper env empty_handler expr in
         let* env, rest_values = list_and_tuple_helper env rest in
         return (env, value :: rest_values)
     in
@@ -298,18 +342,18 @@ module Interpreter (M : MONAD_ERROR) = struct
   ;;
 
   let interpret_expr expr =
-    let* env, v = eval empty expr in
+    let* env, _, v = eval empty empty_handler expr in
     return v
   ;;
 
   let interpret_program program =
-    let rec run_helper env = function
+    let rec run_helper env handlers = function
       | [] -> return env
       | expr :: rest ->
-        let* new_env, _ = eval env expr in
-        run_helper new_env rest
+        let* new_env, _, _ = eval env handlers expr in
+        run_helper new_env handlers rest
     in
-    run_helper empty program
+    run_helper empty empty_handler program
   ;;
 end
 
