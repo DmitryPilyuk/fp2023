@@ -7,7 +7,7 @@ open Auxiliary
 open Angstrom
 
 (* Dispatch recording is needed to call parsers at a point,
-where they have not yet been declared, but are declared later *)
+   where they have not yet been declared, but are declared later *)
 
 type dispatch =
   { parse_un_op : dispatch -> expr Angstrom.t
@@ -28,18 +28,13 @@ type dispatch =
 
 let skip_wspace = skip_while is_whitespace
 let skip_wspace1 = take_while1 is_whitespace
-
 let is_letter c = is_upper c || is_lower c
-
 let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
 let sqr_parens p = skip_wspace *> char '[' *> p <* skip_wspace <* char ']'
 let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
-
 let list_constr = skip_wspace *> string "::"
-
 let arrow = skip_wspace *> string "->"
 let trait = skip_wspace *> string "|"
-
 let tying = skip_wspace *> string "="
 
 let list_sep =
@@ -209,9 +204,7 @@ let parse_type_annotation =
 (* Basic expression parsers *)
 
 let parse_ident = ident eidentifier
-
 let parse_const = const econst
-
 let addition = skip_wspace *> char '+' >>| sadd
 let subtraction = skip_wspace *> char '-' >>| ssub
 let multiplication = skip_wspace *> char '*' >>| smul
@@ -225,7 +218,21 @@ let largerEq = skip_wspace *> string ">=" >>| sgte
 let less = skip_wspace *> char '<' >>| slt
 let lessEq = skip_wspace *> string "<=" >>| slte
 
-let binary_operations = [ multiplication ; division ; addition ; subtraction ; larger ; largerEq ; less ; lessEq ; eqality ; neqality ; logand ; logor ]
+let binary_operations =
+  [ multiplication
+  ; division
+  ; addition
+  ; subtraction
+  ; larger
+  ; largerEq
+  ; less
+  ; lessEq
+  ; eqality
+  ; neqality
+  ; logand
+  ; logor
+  ]
+;;
 
 let unary_minus = skip_wspace *> char '-' >>| umin
 let unary_plus = skip_wspace *> char '+' >>| uplus
@@ -446,10 +453,7 @@ let parse_match_with pack =
       ]
   in
   let parse_case =
-    lift2
-      (fun pat expr -> pat, expr)
-      (trait *> parse_pattern)
-      (arrow *> parse_expr)
+    lift2 (fun pat expr -> pat, expr) (trait *> parse_pattern) (arrow *> parse_expr)
   in
   skip_wspace
   *> string "match"
@@ -555,7 +559,7 @@ let parse_effect_with_arguments pack =
       ; parens @@ pack.parse_list_cons pack
       ; parens @@ pack.parse_bin_op pack
       ; parens @@ pack.parse_un_op pack
-      ; pack.parse_list pack 
+      ; pack.parse_list pack
       ; parens @@ pack.parse_perform pack
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_fun pack
@@ -651,6 +655,9 @@ let parsers input =
     ]
 ;;
 
-let parse input = parse_string ~consume:All (many (parsers default) <* skip_wspace) input
+let parse input =
+  let del = (skip_wspace *> string ";;" *> skip_wspace <|> skip_wspace) *> skip_wspace in
+  parse_string ~consume:All (many (parsers default <* del)) input
+;;
 
 (* ---------------- *)
