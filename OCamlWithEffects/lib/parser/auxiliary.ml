@@ -209,7 +209,7 @@ let aeffect a = AEffect a
 
 (* Constructors for effect handlers *)
 
-(* ----------------- *)
-
 let effecthandler pat expr cont = EffectHandler (pat, expr, cont)
 let continue k = Continue k
+
+(* ----------------- *)
