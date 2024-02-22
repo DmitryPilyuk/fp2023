@@ -5,6 +5,7 @@
  (public_name OCamlWithEffects.Lib)
  (modules
   Ast
+  Auxiliary
   Parser
   Pprintp
   Errorsp

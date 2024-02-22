@@ -11,6 +11,7 @@ open Typedtree
 open Inferencer
 open Interpreter
 open Errorsp
+open Auxiliary
 
 let inference_program ast =
   let typ = 
