@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type id = string [@@deriving show { with_path = false }]
-type continue_val = Continue of id [@@deriving show { with_path = false }]
 
 type const =
   | Char of char
@@ -34,18 +33,6 @@ type un_op =
   | Plus
 [@@deriving show { with_path = false }]
 
-type pattern =
-  | PAny
-  | PNill
-  | PConst of const
-  | PVal of id
-  | PTuple of pattern list
-  | PListCons of pattern * pattern
-  | PEffectWithArguments of id * pattern
-  | PEffectWithoutArguments of id
-  | PEffectHandler of pattern * continue_val
-[@@deriving show { with_path = false }]
-
 type effect_types_annotation =
   | AInt
   | ABool
@@ -58,7 +45,23 @@ type effect_types_annotation =
   | AEffect of effect_types_annotation
 [@@deriving show { with_path = false }]
 
-type expr =
+type continue_val = Continue of id [@@deriving show { with_path = false }]
+
+type pattern =
+  | PAny
+  | PNill
+  | PConst of const
+  | PVal of id
+  | PTuple of pattern list
+  | PListCons of pattern * pattern
+  | PEffectWithArguments of id * pattern
+  | PEffectWithoutArguments of id
+[@@deriving show { with_path = false }]
+
+type effect_handler = EffectHandler of pattern * expr * continue_val
+[@@deriving show { with_path = false }]
+
+and expr =
   | EConst of const
   | EBinaryOperation of bin_op * expr * expr
   | EUnaryOperation of un_op * expr
@@ -75,6 +78,7 @@ type expr =
   | EListCons of expr * expr
   | ETuple of expr list
   | EMatchWith of expr * (pattern * expr) list
+  | ETryWith of expr * effect_handler list
   | EEffectPerform of expr
   | EEffectContinue of continue_val * expr
 [@@deriving show { with_path = false }]
