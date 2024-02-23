@@ -127,60 +127,69 @@ let%expect_test _ =
 
 (* TryWith and Effects parser tests *)
 
-(* let%expect_test _ =
+let%expect_test _ =
+   print_parse_result {|
+      effect E : char -> int effect
+
+      let helper x =
+         match x with
+         | 'a' -> perform E 'a'
+         | _ -> 0
+      ;;
+
+      let f = try helper 'b' with
+      | E k -> continue k 3
+      | E x k -> continue k 2
+   |}
+
+let%expect_test _ =
   print_parse_result {|
-  effect EmptyListException : int
-  ;;
-  let list_hd x = 
-    match x with
-    | [] -> perform EmptyListException
-    | hd :: _ -> hd
-  ;;
-  let empty = []
-  ;;
-  let non_empty = [1; 2; 3]
-  ;;
-  let safe_list_hd l = try list_hd l with
-   | EmptyListException k -> (0, false)
-  ;;
-  let empty_hd = safe_list_hd empty
-  ;;
-  let non_empty_hd = safe_list_hd non_empty
-  ;;
+   effect DevisionByZero : int effect
+
+   let helper x y = 
+      match y with
+      | 0 -> perform DevisionByZero
+      | other -> x / other
+   ;;
+
+   let div x y =
+      try helper x y with
+      | DevisionByZero k -> continue k 0
+   ;;
   |};
   [%expect {|
-    [(EEffectDeclaration ("EmptyListException", AInt));
-      (EDeclaration ("list_hd",
+    [(EEffectDeclaration ("DevisionByZero", (AEffect AInt)));
+      (EDeclaration ("helper",
          (EFun ((PVal "x"),
-            (EMatchWith ((EIdentifier "x"),
-               [(PNill,
-                 (EEffectPerform (EEffectWithoutArguments "EmptyListException")));
-                 ((PListCons ((PVal "hd"), PAny)), (EIdentifier "hd"))]
+            (EFun ((PVal "y"),
+               (EMatchWith ((EIdentifier "y"),
+                  [((PConst (Int 0)),
+                    (EEffectPerform (EEffectWithoutArguments "DevisionByZero")));
+                    ((PVal "other"),
+                     (EBinaryOperation (Div, (EIdentifier "x"),
+                        (EIdentifier "other"))))
+                    ]
+                  ))
                ))
             )),
          None));
-      (EDeclaration ("empty", (EList []), None));
-      (EDeclaration ("non_empty",
-         (EList [(EConst (Int 1)); (EConst (Int 2)); (EConst (Int 3))]), None));
-      (EDeclaration ("safe_list_hd",
-         (EFun ((PVal "l"),
-            (ETryWith (
-               (EApplication ((EIdentifier "list_hd"), (EIdentifier "l"))),
-               [(EffectHandler ((PEffectWithoutArguments "EmptyListException"),
-                   (ETuple [(EConst (Int 0)); (EConst (Bool false))]),
-                   (Continue "k")))
-                 ]
+      (EDeclaration ("div",
+         (EFun ((PVal "x"),
+            (EFun ((PVal "y"),
+               (ETryWith (
+                  (EApplication (
+                     (EApplication ((EIdentifier "helper"), (EIdentifier "x"))),
+                     (EIdentifier "y"))),
+                  [(EffectHandler ((PEffectWithoutArguments "DevisionByZero"),
+                      (EEffectContinue ((Continue "k"), (EConst (Int 0)))),
+                      (Continue "k")))
+                    ]
+                  ))
                ))
             )),
-         None));
-      (EDeclaration ("empty_hd",
-         (EApplication ((EIdentifier "safe_list_hd"), (EIdentifier "empty"))),
-         None));
-      (EDeclaration ("non_empty_hd",
-         (EApplication ((EIdentifier "safe_list_hd"), (EIdentifier "non_empty"))),
          None))
       ] |}]
-;; *)
+;;
 
 let%expect_test _ =
   print_parse_result {|
