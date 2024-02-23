@@ -485,6 +485,21 @@ let infer_expr =
       | _ -> fail (not_reachable) (* ИЗМЕНИТЬ НА ДРУГУЮ ОШИБКУ *)
     in
     return (Subst.empty, typ)
+  | EEffectWithoutArguments (name) -> lookup_env env name
+  | EEffectWithArguments (name, expr) ->
+    let* sub1, ty1 = lookup_env env name in
+    let* sub2, ty2 = helper env expr in
+    (match ty1 with
+    | TArr (arg_ty, eff) -> 
+      let* sub3 = Subst.unify arg_ty ty2 in
+      let* sub = Subst.compose_all [sub1 ; sub2 ; sub3] in
+      return (sub, eff)
+    | _ -> fail (not_reachable)) (* ДРУГАЯ ОШИБКА *)
+  | EEffectPerform (expr) ->
+    let* sub1, ty1 = helper env expr in
+    (match ty1 with
+    | TEffect ty -> return (sub1, ty)
+    | _ -> fail (not_reachable) (* ДРУГАЯ ОШИБКА *)) (* ДРУГАЯ ОШИБКА *)
   | ERecDeclaration (name, expr1, expr2) as rec_declaration ->
     let* fv = fresh_var in
     let env2 = TypeEnv.extend env name (Scheme(TVarSet.empty, fv)) in
