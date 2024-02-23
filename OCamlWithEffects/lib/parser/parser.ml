@@ -17,6 +17,7 @@ type dispatch =
   ; parse_tuple : dispatch -> expr Angstrom.t
   ; parse_application : dispatch -> expr Angstrom.t
   ; parse_fun : dispatch -> expr Angstrom.t
+  ; parse_let_in : dispatch -> expr Angstrom.t
   ; parse_match_with : dispatch -> expr Angstrom.t
   ; parse_try_with : dispatch -> expr Angstrom.t
   ; parse_if_then_else : dispatch -> expr Angstrom.t
@@ -206,7 +207,6 @@ let parse_type_annotation =
 
 let parse_ident = ident eidentifier
 let parse_const = const econst
-
 let addition = skip_wspace *> char '+' >>| sadd
 let subtraction = skip_wspace *> char '-' >>| ssub
 let multiplication = skip_wspace *> char '*' >>| smul
@@ -285,6 +285,7 @@ let parse_bin_op pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_let_in pack
       ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
@@ -318,6 +319,7 @@ let parse_if_then_else pack =
       ; pack.parse_list pack
       ; pack.parse_list_cons pack
       ; pack.parse_tuple pack
+      ; pack.parse_let_in pack
       ; pack.parse_match_with pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
@@ -346,6 +348,7 @@ let parse_fun pack =
       ; pack.parse_application pack
       ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
+      ; pack.parse_let_in pack
       ; parse_const
       ; parse_ident
       ]
@@ -372,6 +375,7 @@ let parse_list_cons pack =
       ; pack.parse_un_op pack
       ; pack.parse_list pack
       ; pack.parse_application pack
+      ; pack.parse_let_in pack
       ; parens @@ pack.parse_fun pack
       ; parens @@ pack.parse_if_then_else pack
       ; parens @@ pack.parse_match_with pack
@@ -398,6 +402,7 @@ let parse_list pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_let_in pack
       ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
@@ -422,6 +427,7 @@ let parse_tuple pack =
       ; pack.parse_list_cons pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_let_in pack
       ; pack.parse_match_with pack
       ; pack.parse_if_then_else pack
       ; parse_const
@@ -448,6 +454,7 @@ let parse_match_with pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_let_in pack
       ; pack.parse_if_then_else pack
       ; pack.parse_continue pack
       ; pack.parse_perform pack
@@ -472,6 +479,7 @@ let parse_application pack =
       let function_parser =
         choice
           [ parens @@ pack.parse_fun pack
+          ; parens @@ pack.parse_let_in pack
           ; parens @@ pack.parse_if_then_else pack
           ; parens @@ pack.parse_match_with pack
           ; parse_ident
@@ -488,6 +496,7 @@ let parse_application pack =
           ; parens @@ parse_match_with pack
           ; parens @@ pack.parse_perform pack
           ; parens @@ pack.parse_if_then_else pack
+          ; parens @@ pack.parse_let_in pack
           ; parse_const
           ; parse_ident
           ]
@@ -523,10 +532,11 @@ let parse_effect_with_arguments pack =
       ; parens @@ pack.parse_list_cons pack
       ; parens @@ pack.parse_bin_op pack
       ; parens @@ pack.parse_un_op pack
-      ; pack.parse_list pack 
+      ; pack.parse_list pack
       ; parens @@ pack.parse_perform pack
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_fun pack
+      ; parens @@ pack.parse_let_in pack
       ; parens @@ pack.parse_if_then_else pack
       ; parens @@ pack.parse_match_with pack
       ; parse_const
@@ -537,7 +547,9 @@ let parse_effect_with_arguments pack =
   *> (parens self <|> lift2 eefect_with_arguments parse_capitalized_name parse_expr)
 ;;
 
-let parse_effect pack = parse_effect_with_arguments pack <|> parse_effect_without_arguments
+let parse_effect pack =
+  parse_effect_with_arguments pack <|> parse_effect_without_arguments
+;;
 
 let parse_try_with pack =
   fix
@@ -552,6 +564,7 @@ let parse_try_with pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_fun pack
+      ; pack.parse_let_in pack
       ; pack.parse_if_then_else pack
       ; pack.parse_perform pack
       ; pack.parse_continue pack
@@ -576,9 +589,10 @@ let parse_try_with pack =
 let parse_perform pack =
   fix
   @@ fun self ->
-  skip_wspace *>
+  skip_wspace
+  *>
   let perform = skip_wspace *> string "perform" <* skip_wspace in
-  let* result = (perform *> parse_effect pack) in 
+  let* result = perform *> parse_effect pack in
   return (eeffect_perform result)
 ;;
 
@@ -598,6 +612,7 @@ let parse_continue pack =
           ; parens @@ pack.parse_perform pack
           ; parens @@ pack.parse_application pack
           ; parens @@ pack.parse_fun pack
+          ; parens @@ pack.parse_let_in pack
           ; parens @@ pack.parse_if_then_else pack
           ; parens @@ pack.parse_match_with pack
           ; parse_const
@@ -613,6 +628,47 @@ let parse_continue pack =
 ;;
 
 let parse_declaration pack =
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
+      ; pack.parse_list pack
+      ; pack.parse_list_cons pack
+      ; pack.parse_tuple pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_let_in pack
+      ; pack.parse_perform pack
+      ; pack.parse_match_with pack
+      ; pack.parse_try_with pack
+      ; parse_effect_without_arguments
+      ; pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let helper constr =
+    lift3
+      constr
+      parse_uncapitalized_name
+      (many parse_pattern
+       >>= fun args ->
+       tying *> parse_expr
+       >>= fun expr ->
+       skip_wspace
+       *>
+       match List.rev args with
+       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
+       | _ -> return expr)
+      (return None)
+  in
+  skip_wspace *> string "let" *> skip_wspace1 *> option "" (string "rec" <* skip_wspace1)
+  >>= function
+  | "rec" -> helper erec_declaration
+  | _ -> helper edeclaration
+;;
+
+let parse_let_in pack =
   fix
   @@ fun self ->
   let parse_expr =
@@ -647,7 +703,7 @@ let parse_declaration pack =
        match List.rev args with
        | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
        | _ -> return expr)
-      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
+      (skip_wspace *> string "in" *> parse_expr >>| fun e -> Some e)
   in
   skip_wspace *> string "let" *> skip_wspace1 *> option "" (string "rec" <* skip_wspace1)
   >>= function
@@ -667,6 +723,7 @@ let default =
   ; parse_tuple
   ; parse_application
   ; parse_fun
+  ; parse_let_in
   ; parse_match_with
   ; parse_try_with
   ; parse_if_then_else
@@ -678,7 +735,8 @@ let default =
 
 let parsers input =
   choice
-    [ parse_declaration input
+    [ parse_let_in input
+    ; parse_declaration input
     ; parse_bin_op input
     ; parse_un_op input
     ; parse_list input
