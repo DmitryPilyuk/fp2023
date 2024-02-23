@@ -41,6 +41,7 @@ let pp_type ppf typ =
           ~pp_sep:(fun ppf () -> Format.fprintf ppf " * ")
           (fun ppf ty -> helper ppf ty))
         tl
+    | TEffect (TArr(_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t
   in 
   helper ppf typ

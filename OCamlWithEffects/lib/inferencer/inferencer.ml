@@ -301,6 +301,26 @@ let unary_operator_type = fun operator ->
   | Not -> tbool
 ;;
 
+let annotation_to_type = 
+  let rec helper = function
+  | AInt -> tint
+  | ABool -> tbool
+  | AChar -> tchar
+  | AString -> tstring
+  | AUnit -> tunit
+  | AArrow (l, r) -> (helper l) @-> (helper r)
+  | AList a -> tlist (helper a)
+  | AEffect a -> teffect (helper a)
+  in
+  helper
+;;
+
+let rec curry_tarr = function
+  | AArrow (AArrow (left, inner), right) ->
+    AArrow (left, curry_tarr (AArrow (inner, right)))
+  | typ -> typ
+;;
+
 let infer_pattern =
   let rec helper env = function
   | PVal v -> 
@@ -437,6 +457,21 @@ let infer_expr =
     cases
     ~init:(return(sub1, fv))
     ~f:f
+  | EEffectDeclaration (name, annot) ->
+    let* typ =
+      match annot with
+      | AEffect _ as a -> return (annotation_to_type a)
+      | AArrow (l, r) ->
+        (match r with
+        | AEffect _ -> 
+          let curr_l = curry_tarr l in
+          let l_typ = annotation_to_type curr_l in
+          let r_typ = annotation_to_type r in
+          return (l_typ @-> r_typ)
+        | _ -> fail (not_reachable)) (* ИЗМЕНИТЬ НА ДРУГУЮ ОШИБКУ *)
+      | _ -> fail (not_reachable) (* ИЗМЕНИТЬ НА ДРУГУЮ ОШИБКУ *)
+    in
+    return (Subst.empty, typ)
   | ERecDeclaration (name, expr1, expr2) as rec_declaration ->
     let* fv = fresh_var in
     let env2 = TypeEnv.extend env name (Scheme(TVarSet.empty, fv)) in
@@ -475,7 +510,7 @@ let infer_program env program =
   | hd :: tl ->
     let* acc_env, acc_names = acc in
     match hd with
-    | EDeclaration (name, expr1, None) | ERecDeclaration (name, expr1, None) -> 
+    | EDeclaration (name, _, None) | ERecDeclaration (name, _, None) | EEffectDeclaration (name, _) -> 
       let* sub, ty = infer_expr acc_env hd in
       let new_env = TypeEnv.extend acc_env name (Scheme(TVarSet.empty, ty)) in
       let update_name_list name names_list =
