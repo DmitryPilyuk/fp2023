@@ -34,53 +34,55 @@ type un_op =
 [@@deriving show { with_path = false }]
 
 type effect_types_annotation =
-  | AInt
-  | ABool
-  | AChar
-  | AString
-  | AUnit
-  | AArrow of effect_types_annotation * effect_types_annotation
-  | ATuple of effect_types_annotation list
-  | AList of effect_types_annotation
-  | AEffect of effect_types_annotation
+  | AInt (* int *)
+  | ABool (* bool *)
+  | AChar (* char *)
+  | AString (* string *)
+  | AUnit (* unit *)
+  | AArrow of effect_types_annotation * effect_types_annotation (* int -> char *)
+  | ATuple of effect_types_annotation list (* int * char * bool *)
+  | AList of effect_types_annotation (* int list *)
+  | AEffect of effect_types_annotation (* int effect *)
 [@@deriving show { with_path = false }]
 
 type continue_val = Continue of id [@@deriving show { with_path = false }]
+(* continue k 0 - here k is continue variable *)
 
 type pattern =
-  | PAny
-  | PNill
-  | PConst of const
-  | PVal of id
-  | PTuple of pattern list
-  | PListCons of pattern * pattern
-  | PEffectWithArguments of id * pattern
-  | PEffectWithoutArguments of id
+  | PAny (* _ *)
+  | PNill (* [] *)
+  | PConst of const (* 1 *)
+  | PVal of id (* x *)
+  | PTuple of pattern list (* (x, y, z) *)
+  | PListCons of pattern * pattern (* hd :: tl *)
+  | PEffectWithArguments of id * pattern (* Effect *)
+  | PEffectWithoutArguments of id (* Effect (x::y) *)
 [@@deriving show { with_path = false }]
 
-type effect_handler = EffectHandler of pattern * expr * continue_val
+type effect_handler = EffectHandler of pattern * expr * continue_val 
+(* try x with | E k -> continue k 0 - the part after with is the effect handler *)
 [@@deriving show { with_path = false }]
 
 and expr =
-  | EConst of const
-  | EBinaryOperation of bin_op * expr * expr
-  | EUnaryOperation of un_op * expr
-  | EIdentifier of id
-  | EApplication of expr * expr
-  | EFun of pattern * expr
-  | EDeclaration of id * expr * expr option
-  | ERecDeclaration of id * expr * expr option
-  | EEffectDeclaration of id * effect_types_annotation
-  | EEffectWithArguments of id * expr
-  | EEffectWithoutArguments of id
-  | EIfThenElse of expr * expr * expr
-  | EList of expr list
-  | EListCons of expr * expr
-  | ETuple of expr list
-  | EMatchWith of expr * (pattern * expr) list
-  | ETryWith of expr * effect_handler list
-  | EEffectPerform of expr
-  | EEffectContinue of continue_val * expr
+  | EConst of const (* 1 *)
+  | EBinaryOperation of bin_op * expr * expr (* 1 + 1 *)
+  | EUnaryOperation of un_op * expr (* -1, not true *)
+  | EIdentifier of id (* let f = 5 - here f is identifier *)
+  | EApplication of expr * expr (* f x *)
+  | EFun of pattern * expr (* fun x -> x *)
+  | EDeclaration of id * expr * expr option (* let f = 1 *)
+  | ERecDeclaration of id * expr * expr option (* let rec f x = f (x-1) *)
+  | EEffectDeclaration of id * effect_types_annotation (* effect DevisionByZero : int effect *)
+  | EEffectWithArguments of id * expr (* DevisionByZero 0 *)
+  | EEffectWithoutArguments of id (* DevisionByZero *)
+  | EIfThenElse of expr * expr * expr (* if x = 1 then x else x - 1 *)
+  | EList of expr list (* [1 ; 2 ; 3] *)
+  | EListCons of expr * expr (* 1 :: 2 :: 3 :: [] *)
+  | ETuple of expr list (* (1, true, 'c') *)
+  | EMatchWith of expr * (pattern * expr) list (* match x with | hd :: tl -> hd | _ -> 0 *)
+  | ETryWith of expr * effect_handler list (* try x with | Effect1 k -> continue k 0 | Effect2 k -> continue k 1 *)
+  | EEffectPerform of expr (* perform DevisionByZero *)
+  | EEffectContinue of continue_val * expr (* continue k 0 *)
 [@@deriving show { with_path = false }]
 
 type program = expr list [@@deriving show { with_path = false }]
