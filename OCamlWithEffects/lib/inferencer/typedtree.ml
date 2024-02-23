@@ -1,4 +1,4 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -16,12 +16,12 @@ type typ =
   | TPrim of primitive_type (* int, bool, unit, char, string *)
   | TVar of type_var (* 'a, 'b, etc. *)
   | TArr of typ * typ (* 'a -> 'b *)
-  | TTuple of typ list (* 'a * 'b * ... *)
+  | TTuple of typ list (* 'a * int * char *)
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
-  (* | TContinuation *)
+  | TContinuation (* continuation *)
 
-module TVarSet = Stdlib.Set.Make (Int)
+module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables *)
 
 (* A schema of a type, 
    consisting of a set of variables qualified for that type

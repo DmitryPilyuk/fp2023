@@ -1,4 +1,4 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -49,14 +49,14 @@ type continue_val = Continue of id [@@deriving show { with_path = false }]
 (* continue k 0 - here k is continue variable *)
 
 type pattern =
-  | PAny 
-  | PNill
-  | PConst of const
-  | PVal of id
-  | PTuple of pattern list
-  | PListCons of pattern * pattern
-  | PEffectWithArguments of id * pattern
-  | PEffectWithoutArguments of id
+  | PAny (* _ *)
+  | PNill (* [] *)
+  | PConst of const (* 1 *)
+  | PVal of id (* x *)
+  | PTuple of pattern list (* (x, y, z) *)
+  | PListCons of pattern * pattern (* hd :: tl *)
+  | PEffectWithArguments of id * pattern (* Effect *)
+  | PEffectWithoutArguments of id (* Effect (x::y) *)
 [@@deriving show { with_path = false }]
 
 type effect_handler = EffectHandler of pattern * expr * continue_val 
