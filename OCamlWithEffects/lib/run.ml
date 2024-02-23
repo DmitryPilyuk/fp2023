@@ -86,7 +86,7 @@ let interpret program =
 let interpret_program1 ast =
   let res = 
       (match run_program_interpreter ast with
-      | Ok val_env -> print_program_value1 ["f"; "KKK" ; "g" ; "z" ; "E"] val_env 
+      | Ok val_env -> print_program_value1 ["f"; "res" ; "g" ; "z" ; "E"] val_env 
       | Error e -> print_interpreter_error e)
   in res
 ;;

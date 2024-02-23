@@ -441,35 +441,6 @@ let parse_tuple pack =
        (many1 (skip_wspace *> string "," *> parse_expr))
 ;;
 
-let parse_match_with pack =
-  fix
-  @@ fun self ->
-  let parse_expr =
-    choice
-      [ pack.parse_bin_op pack
-      ; pack.parse_un_op pack
-      ; self
-      ; pack.parse_list pack
-      ; pack.parse_list_cons pack
-      ; pack.parse_tuple pack
-      ; pack.parse_application pack
-      ; pack.parse_fun pack
-      ; pack.parse_let_in pack
-      ; pack.parse_if_then_else pack
-      ; pack.parse_continue pack
-      ; pack.parse_perform pack
-      ; parse_const
-      ; parse_ident
-      ]
-  in
-  let parse_case =
-    lift2 (fun pat expr -> pat, expr) (trait *> parse_pattern) (arrow *> parse_expr)
-  in
-  skip_wspace
-  *> string "match"
-  *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
-;;
-
 let parse_application pack =
   fix
   @@ fun self ->
@@ -493,7 +464,7 @@ let parse_application pack =
           ; parens @@ pack.parse_list_cons pack
           ; parens self
           ; parens @@ pack.parse_fun pack
-          ; parens @@ parse_match_with pack
+          ; parens @@ pack.parse_match_with pack
           ; parens @@ pack.parse_perform pack
           ; parens @@ pack.parse_if_then_else pack
           ; parens @@ pack.parse_let_in pack
@@ -592,7 +563,7 @@ let parse_perform pack =
   skip_wspace
   *>
   let perform = skip_wspace *> string "perform" <* skip_wspace in
-  let* result = perform *> parse_effect pack in
+  let* result = perform *> (parse_effect pack <|> parse_ident ) in
   return (eeffect_perform result)
 ;;
 
@@ -666,6 +637,37 @@ let parse_declaration pack =
   >>= function
   | "rec" -> helper erec_declaration
   | _ -> helper edeclaration
+;;
+
+let parse_match_with pack =
+  fix
+  @@ fun self ->
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
+      ; self
+      ; pack.parse_list pack
+      ; pack.parse_list_cons pack
+      ; pack.parse_tuple pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_let_in pack
+      ; pack.parse_if_then_else pack
+      ; pack.parse_continue pack
+      ; pack.parse_perform pack
+      ; pack.parse_effect_with_arguments pack
+      ; parse_effect_without_arguments
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let parse_case =
+    lift2 (fun pat expr -> pat, expr) (trait *> parse_pattern) (arrow *> parse_expr)
+  in
+  skip_wspace
+  *> string "match"
+  *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
 ;;
 
 let parse_let_in pack =

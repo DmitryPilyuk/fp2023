@@ -64,7 +64,7 @@ module Handlers (M : MONAD_ERROR) = struct
   let find_handler handlers name =
     match find_handler handlers name with
     | Some v -> return v
-    | None -> fail (unbound_handler name) (* другую ошибку *)
+    | None -> fail (type_error) (* другую ошибку *)
   ;;
 
 end

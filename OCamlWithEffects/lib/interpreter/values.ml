@@ -5,26 +5,31 @@
 open Ast
 
 type value =
-  | VInt of int
-  | VBool of bool
-  | VChar of char
-  | VString of string
-  | VUnit
-  | VTuple of value list
-  | VList of value list
-  | VFun of pattern * expr * enviroment
-  | VRecFun of id * value
-  | VEffectDeclaration of id
-  | VEffectWithArguments of id * value
-  | VEffectWithoutArguments of id
-  | VEffectContinue of continue_val
-  | VThrowingValue of value
-  | VHandlerWithoutContinue of pattern (* ??? *)
+  | VInt of int (* 1 *)
+  | VBool of bool (* true *)
+  | VChar of char (* 'c' *)
+  | VString of string (* "hello" *)
+  | VUnit (* () *)
+  | VTuple of value list (* (1,'c', bool) *)
+  | VList of value list (* [1; 3; 4] or (1 :: 2 :: 3 :: [4]) *)
+  | VFun of pattern * expr * enviroment (* fun x -> expr (x) *)
+  | VRecFun of id * value (* let rec f = fun x -> expr (x, f) *)
+  | VEffectDeclaration of id (* effect DevisionByZero : int -> int effect *)
+  | VEffectWithArguments of id * value (* DevisionByZero x *)
+  | VEffectWithoutArguments of id (* DevisionByZero *)
+  | VEffectContinue of continue_val (* continue k 0 - here k is the continuation variable *)
+  | VThrowingValue of value (* continue k 0 - here 0 is the throwing value *)
+  | VHandlerWithoutContinue of pattern (* try ... with | DevisionByZero -> 0 - we don't continue the program, we just pass the value. *)
 
+(* The environment contains the values ​​of let bindings and declared effects. *)
+(* Example: let f = 5 will be presented as (f, VInt 5) *)
 and enviroment = (string, value, Base.String.comparator_witness) Base.Map.t
+
+(* Handlers contain effect handlers for effects that may occur in a given trywith block. *)
 and handlers = (string, (pattern * expr * continue_val), Base.String.comparator_witness) Base.Map.t
 
 (* Constructors for values *)
+
 let vint c = VInt c
 let vbool c = VBool c
 let vchar c = VChar c
@@ -40,4 +45,5 @@ let veffect_without_arguments n = VEffectWithoutArguments n
 let veffect_continue k = VEffectContinue k
 let vhandler_without_continue p = VHandlerWithoutContinue p
 let vthrowing_value v = VThrowingValue v
+
 (* ---------------- *)

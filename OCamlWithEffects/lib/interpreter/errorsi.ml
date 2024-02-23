@@ -7,10 +7,13 @@ open Ast
 type error =
   [ `Devision_by_zero
   | `Unbound_variable of id
+  (* | `Unbound_effect of id *)
   | `Unbound_handler of id
   | `Non_existen_operation
   | `Non_existen_type
+  (* | `Not_exhaustive_match *)
   | `Type_error
+  | `Handler_without_continue of v
   ]
 
 (* Constructors for types *)
@@ -20,4 +23,5 @@ let non_existen_operation = `Non_existen_operation
 let non_existen_type = `Non_existen_type
 let type_error = `Type_error
 let unbound_handler name = `Unbound_handler name
+let handler_without_continue v = Handler_without_continue v
 (* ---------------- *)
