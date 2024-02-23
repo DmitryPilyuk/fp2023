@@ -359,7 +359,20 @@ let infer_pattern =
     let* sub3 = Subst.compose sub1 sub2 in
     let env = TypeEnv.apply env2 sub3 in
     let ty3 = Subst.apply sub3 fv in
-    return (ty3, env) 
+    return (ty3, env)
+  | PEffectWithoutArguments (name) -> 
+    let* _, typ = lookup_env env name in
+    return (typ, env)
+  | PEffectWithArguments (name, arg_pattern) -> 
+    let* _, effect_typ = lookup_env env name in
+    (match effect_typ with
+    | TArr (arg_typ, TEffect res_typ) ->
+      let* arg_ty, env' = helper env arg_pattern in
+      let* sub = Subst.unify arg_ty arg_typ in
+      let env'' = TypeEnv.apply env' sub in
+      let effect_ty = Subst.apply sub (arg_typ @-> (teffect res_typ)) in
+      return (effect_ty, env'')
+    | _ -> fail (not_reachable))
   in
   helper
 ;;

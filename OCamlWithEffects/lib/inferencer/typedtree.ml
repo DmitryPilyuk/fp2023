@@ -19,6 +19,7 @@ type typ =
   | TTuple of typ list (* 'a * 'b * ... *)
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
+  (* | TContinuation *)
 
 module TVarSet = Stdlib.Set.Make (Int)
 
