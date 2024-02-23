@@ -28,7 +28,7 @@ let pp_value ppf typ =
   | VRecFun _ -> Format.fprintf ppf "<fun>"
   | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ -> Format.fprintf ppf "<effect>"
   | VEffectContinue k -> Format.fprintf ppf "<continue>"
-  | VHandlerWithoutContinue k -> Format.fprintf ppf "<continue1111>"
+  | VHandlerWithoutContinue k -> Format.fprintf ppf "<aaa>"
   | VThrowingValue v -> Format.fprintf ppf "value"
   (* | VHandlerWithoutContinue of pattern ??? *)
 in 
@@ -43,6 +43,7 @@ let pp_error ppf error =
   | `Non_existen_type -> Format.fprintf ppf "Non-existent type."
   | `Type_error -> Format.fprintf ppf "Type error."
   | `Unbound_handler id -> Format.fprintf ppf "Unbound variable '%s'." id
+  | `Handler_without_continue name -> Format.fprintf ppf "The handler for effect '%s' does not contain the expressions needed to continue." name
 ;;
 
 let print_interpreter_error e =

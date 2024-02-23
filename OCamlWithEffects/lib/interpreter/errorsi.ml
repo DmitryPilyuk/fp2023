@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Values
 
 type error =
   [ `Devision_by_zero
@@ -13,7 +14,7 @@ type error =
   | `Non_existen_type
   (* | `Not_exhaustive_match *)
   | `Type_error
-  | `Handler_without_continue of v
+  | `Handler_without_continue of id
   ]
 
 (* Constructors for types *)
@@ -23,5 +24,5 @@ let non_existen_operation = `Non_existen_operation
 let non_existen_type = `Non_existen_type
 let type_error = `Type_error
 let unbound_handler name = `Unbound_handler name
-let handler_without_continue v = Handler_without_continue v
+let handler_without_continue name = `Handler_without_continue name
 (* ---------------- *)

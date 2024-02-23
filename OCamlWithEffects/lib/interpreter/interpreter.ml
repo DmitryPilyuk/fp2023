@@ -383,7 +383,7 @@ module Interpreter (M : MONAD_ERROR) = struct
               let* _, _, v = helper new_env handlers expr in
               (match v with
               | VThrowingValue n -> return (env, handlers, n)
-              | _ -> return (env, handlers, (vhandler_without_continue pat)))
+              | _ -> fail (handler_without_continue name))
             | UnSuccessful -> fail (type_error)) (* другая ошибка *)
           | _ -> fail (type_error))(**)
         | _ -> fail (type_error)) (* в перформ может быть только эффект *)
