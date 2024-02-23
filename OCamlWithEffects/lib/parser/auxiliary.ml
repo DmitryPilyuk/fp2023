@@ -1,4 +1,4 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -8,10 +8,12 @@ open Angstrom
 (* Determinant of the type of a steamed expression *)
 
 type ast_type =
-  | DeclarationList
-  | MixedList
-  | FreeExpression
+  | DeclarationList (* [EDeclaration(...), ERecDeclaration(...), EFfectDeclaration(...)] *)
+  | MixedList (* [EDeclaration(...), EBinaryOperation(...) ]*)
+  | FreeExpression (* UnaryOperation(...) *)
 
+(* This function, given an ast, determines whether ast is a program (a list of declarations),
+   a free expression, or a list containing arbitrary expressions. *)
 let determine_ast_type ast =
   match ast with
   | [ expr ] ->
