@@ -161,7 +161,7 @@ let parse_pattern =
       ; parse_pattern_tuple self
       ]
   in
-  parse_pattern_with_args p_parser <|> p_parser
+    parse_pattern_with_args p_parser <|> p_parser
 ;;
 
 (* ---------------- *)
@@ -200,7 +200,7 @@ let parse_type_annotation =
   let parse_t = parse_list_type parse_t <|> parse_t in
   let parse_t = parse_effect_type parse_t <|> parse_t in
   let parse_t = parse_tuple_type parse_t <|> parse_t in
-  chainr1 parse_t parse_arrow_type
+  chainl1 parse_t parse_arrow_type
 ;;
 
 (* ---------------- *)
@@ -550,7 +550,7 @@ let parse_try_with pack =
   let parse_case =
     lift3
       (fun pat cont expr -> effecthandler pat expr cont)
-      (trait *> parse_pattern)
+      (trait *> (parse_pattern_effect_without_args <|> parse_pattern))
       (skip_wspace *> parse_uncapitalized_name >>| continue)
       (arrow *> parse_expr)
   in

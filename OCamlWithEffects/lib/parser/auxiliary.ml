@@ -128,6 +128,11 @@ let rec chainr1 e op =
   e >>= fun se -> op >>= (fun f -> chainr1 e op >>| f se) <|> return se
 ;;
 
+let chainl1 e op =
+  let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
+  e >>= fun init -> go init
+;;
+
 (* ---------------- *)
 
 (* Constructors for expressions *)
