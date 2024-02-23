@@ -1,4 +1,4 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -83,6 +83,7 @@ end
 module Type = struct
   type t = typ
 
+  (* Checks whether the passed type variable is contained in the passed type. *)
   let rec occurs_in v = function
     | TVar b -> b = v
     | TArr (left, right) -> occurs_in v left || occurs_in v right
@@ -93,6 +94,7 @@ module Type = struct
     | TPrim _ -> false
   ;;
 
+  (* Combines all type variables contained in a type into one set. *)
   let type_vars =
     let rec helper acc = function
       | TVar n -> TVarSet.add n acc
@@ -110,7 +112,7 @@ end
 module Subst : sig
   type t
 
-  val empty : t
+  val empty : t 
   val singleton : int -> typ -> t R.t
   val find : t -> int -> typ option
   val remove : t -> int -> t
@@ -118,6 +120,7 @@ module Subst : sig
   val unify : typ -> typ -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
+
 end = struct
   open R
   open R.Syntax
@@ -125,7 +128,7 @@ end = struct
   type t = (int, typ, Base.Int.comparator_witness) Base.Map.t
 
   let empty = Base.Map.empty (module Base.Int)
-  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
+  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v) (* Creates a pair if no error occurs. *)
 
   let singleton k v =
     let* k, v = mapping k v in
@@ -135,6 +138,7 @@ end = struct
   let find sub k = Base.Map.find sub k
   let remove sub k = Base.Map.remove sub k
 
+  (* Replace all type variables in a type with values ​​from the substitution. *)
   let apply sub =
     let rec helper = function
       | TVar n ->
@@ -149,6 +153,7 @@ end = struct
     helper
   ;;
 
+  (* Try to unify two types into a single type. *)
   let rec unify l r =
     match l, r with
     | TPrim l, TPrim r when l = r -> return empty
@@ -167,9 +172,9 @@ end = struct
            compose sub1 sub2)
        with
        | Ok r -> r
-       | _ -> fail (`Unification_failed (l, r)))
+       | _ -> fail (unification_failed l r))
     | TEffect typ1, TEffect typ2 -> unify typ1 typ2
-    | _ -> fail (`Unification_failed (l, r))
+    | _ -> fail (unification_failed l r)
 
   and extend k v sub =
     match find sub k with

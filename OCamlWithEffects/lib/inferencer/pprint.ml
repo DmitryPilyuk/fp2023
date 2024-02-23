@@ -60,6 +60,8 @@ let pp_error ppf error =
         pp_type r
   | `Unbound_variable name ->
       Format.fprintf ppf "Unbound variable '%s'" name
+  | `Unbound_effect name ->
+      Format.fprintf ppf "Unbound effect '%s'" name
   | `Several_bounds name ->
       Format.fprintf ppf "Variable '%s' is bound several times" name
 ;;
