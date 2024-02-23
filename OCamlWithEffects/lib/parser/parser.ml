@@ -587,8 +587,6 @@ let parse_try_with pack =
 ;;
 
 let parse_perform pack =
-  fix
-  @@ fun self ->
   skip_wspace
   *>
   let perform = skip_wspace *> string "perform" <* skip_wspace in
