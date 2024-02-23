@@ -463,47 +463,6 @@ let parse_match_with pack =
   *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
 ;;
 
-let parse_declaration pack =
-  fix
-  @@ fun self ->
-  let parse_expr =
-    choice
-      [ pack.parse_bin_op pack
-      ; pack.parse_un_op pack
-      ; pack.parse_list pack
-      ; pack.parse_list_cons pack
-      ; pack.parse_tuple pack
-      ; pack.parse_application pack
-      ; pack.parse_fun pack
-      ; pack.parse_match_with pack
-      ; pack.parse_try_with pack
-      ; self
-      ; pack.parse_if_then_else pack
-      ; parse_const
-      ; parse_ident
-      ]
-  in
-  let helper constr =
-    lift3
-      constr
-      parse_uncapitalized_name
-      (many parse_pattern
-       >>= fun args ->
-       tying *> parse_expr
-       >>= fun expr ->
-       skip_wspace
-       *>
-       match List.rev args with
-       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
-       | _ -> return expr)
-      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
-  in
-  skip_wspace *> string "let" *> skip_wspace1 *> option "" (string "rec" <* skip_wspace1)
-  >>= function
-  | "rec" -> helper erec_declaration
-  | _ -> helper edeclaration
-;;
-
 let parse_application pack =
   fix
   @@ fun self ->
@@ -651,6 +610,49 @@ let parse_continue pack =
         eeffect_continue
         (parse_continue *> parse_continue_content)
         (skip_wspace *> parse_expr))
+;;
+
+let parse_declaration pack =
+  fix
+  @@ fun self ->
+  let parse_expr =
+    choice
+      [ pack.parse_bin_op pack
+      ; pack.parse_un_op pack
+      ; pack.parse_list pack
+      ; pack.parse_list_cons pack
+      ; pack.parse_tuple pack
+      ; pack.parse_application pack
+      ; pack.parse_fun pack
+      ; pack.parse_perform pack
+      ; pack.parse_match_with pack
+      ; pack.parse_try_with pack
+      ; parse_effect_without_arguments
+      ; self
+      ; pack.parse_if_then_else pack
+      ; parse_const
+      ; parse_ident
+      ]
+  in
+  let helper constr =
+    lift3
+      constr
+      parse_uncapitalized_name
+      (many parse_pattern
+       >>= fun args ->
+       tying *> parse_expr
+       >>= fun expr ->
+       skip_wspace
+       *>
+       match List.rev args with
+       | h :: tl -> return @@ List.fold_left (fun acc x -> efun x acc) (efun h expr) tl
+       | _ -> return expr)
+      (skip_wspace *> string "in" *> parse_expr >>| (fun e -> Some e) <|> return None)
+  in
+  skip_wspace *> string "let" *> skip_wspace1 *> option "" (string "rec" <* skip_wspace1)
+  >>= function
+  | "rec" -> helper erec_declaration
+  | _ -> helper edeclaration
 ;;
 
 (* ---------------- *)

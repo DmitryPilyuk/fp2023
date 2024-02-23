@@ -26,6 +26,10 @@ let pp_value ppf typ =
         (String.concat "; " (List.map (fun v -> Format.asprintf "%a" helper v) l))
   | VFun _ -> Format.fprintf ppf "<fun>"
   | VRecFun _ -> Format.fprintf ppf "<fun>"
+  | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ -> Format.fprintf ppf "<effect>"
+  | VEffectContinue k -> Format.fprintf ppf "<continue>"
+  | VThrowingValue v -> Format.fprintf ppf "value"
+  (* | VHandlerWithoutContinue of pattern ??? *)
 in 
 helper ppf typ
 ;;
@@ -56,4 +60,14 @@ let print_program_value val_env typ_env names_list =
     match (typ, value) with
     | Some (Scheme (_, typ)), Some value -> Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
     | _, _ -> Printf.printf "") (* Unreacheable *)
+;;
+
+let print_expr_value1 name value = Format.printf "%s = %s \n" name (value_to_string value)
+
+let print_program_value1 names_list val_env  =
+  Base.List.iter names_list ~f:(fun name ->
+    let value = Base.Map.find val_env name in
+    match (value) with
+    | Some value -> Format.printf "%s = %s\n" name (value_to_string value)
+    | _ -> Printf.printf "") (* Unreacheable *)
 ;;

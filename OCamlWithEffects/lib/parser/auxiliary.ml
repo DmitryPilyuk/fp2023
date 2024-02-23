@@ -16,7 +16,7 @@ let determine_ast_type ast =
   match ast with
   | [ expr ] ->
     (match expr with
-     | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> DeclarationList
+     | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ -> DeclarationList
      | _ -> FreeExpression)
   | _ ->
     let rec helper ast =
@@ -24,7 +24,7 @@ let determine_ast_type ast =
       | [] -> DeclarationList
       | hd :: tl ->
         (match hd with
-         | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) -> helper tl
+         | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ -> helper tl
          | _ -> MixedList)
     in
     helper ast

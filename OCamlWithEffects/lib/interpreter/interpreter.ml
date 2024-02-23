@@ -39,6 +39,12 @@ module Env (M : MONAD_ERROR) = struct
     | None -> fail (unbound_variable name)
   ;;
 
+  let find_effect env name =
+    match find env name with
+    | Some v -> return v
+    | None -> fail (unbound_variable name) (* другая ошибка *)
+  ;;
+
   (* UNBOUND VALUE *)
 end
 
@@ -57,7 +63,7 @@ module Handlers (M : MONAD_ERROR) = struct
 
   let find_handler handlers name =
     match find_handler handlers name with
-    | Some v -> return (handlers, v)
+    | Some v -> return v
     | None -> fail (unbound_handler name) (* другую ошибку *)
   ;;
 
@@ -200,11 +206,18 @@ module Interpreter (M : MONAD_ERROR) = struct
       helper
     ;;
 
-    (* let rec eval_handler hand v =
-      let handlers = empty_handler in
-      let res = match hand, v with
-      | EffectHandler (pat, expr, value), (VEffectWithoutArgs name as v)
-      | EffectHandler (pat, expr, value), (VEffectWithArgs (name, _) as v) ->  *)
+    let rec eval_handler handler v =
+      let env = empty in
+      let rec helper =
+        match handler, v with
+        | EffectHandler (p1, _, _), VHandlerWithoutContinue (p2) ->
+          (* переделать: p2 (pattern) сделать value *)
+          (match p1 = p2 with
+          | true -> return (Successful, env)
+          | false -> return (UnSuccessful, env))
+        | EffectHandler (p, _, _), ((VEffectWithoutArguments _) as v) -> eval_pattern p v
+        | EffectHandler (p, _, _), ((VEffectWithArguments _) as v) -> eval_pattern p v
+      in helper
     
   end
 
@@ -310,6 +323,70 @@ module Interpreter (M : MONAD_ERROR) = struct
               checker
             | _ -> fail type_error)
          | _ -> fail type_error)
+      | EEffectDeclaration (name, _) ->
+        let v = veffect_declaration name in
+        let new_env = extend env name v in
+        return (new_env, handlers, v)
+      | EEffectWithArguments (name, expr) ->
+        let* _, _, v1 = helper env handlers expr in
+        let v2 = veffect_with_arguments name v1 in
+        return (env, handlers, v2)
+      | EEffectWithoutArguments (name) ->
+        let v = veffect_without_arguments name in
+        return (env, handlers, v)
+      | ETryWith (expr, body) ->
+        let rec trywith_helper handlers body =
+          (match body with
+          | [] -> return handlers
+          | hd :: tl ->
+            match hd with
+            | EffectHandler (pat, expr, cont) -> 
+              let* handlers = 
+                match pat with
+                | PEffectWithoutArguments name as pat -> return (extend_handler handlers name (pat, expr, cont))
+                | PEffectWithArguments (name, _) as pat -> return (extend_handler handlers name (pat, expr, cont))
+              in
+              trywith_helper handlers tl
+            | _ -> fail (type_error)) (* в try_with могут быть только handler *)
+        in
+        let* handlers = trywith_helper handlers body in
+        let* _, _, v = helper env handlers expr in
+        return (env, handlers, v)
+      | EEffectContinue (cont, expr) ->
+        let* _, _, v = helper env handlers expr in
+        let* cont =
+        (match cont with
+        | Continue k -> return k
+        | _ -> fail (`Type_error)) in (* !!! *)
+        let res =
+        match find env cont with
+        | Some (VEffectContinue (Continue n)) when n = cont -> return (env, handlers, (vthrowing_value v))
+        | _ -> fail (`Type_error) (* ДРУГУЮ ОШИБКУ КИДАТЬ *)
+        in res
+      | EEffectPerform expr ->
+        let* _, _, v = helper env handlers expr in
+        (match v with
+        | VEffectWithArguments (name, _) | VEffectWithoutArguments name -> 
+          let* effect_checker = find_effect env name in
+          let* handler = find_handler handlers name in
+          (match handler with
+          | pat, expr, cont  -> 
+            let* flag, pat_env = Pattern.eval_pattern pat v in
+            (match flag with
+            | Successful -> 
+              let new_env = compose env pat_env in
+              let* cont_val = 
+                (match cont with
+                | Continue k -> return k
+                | _ -> fail (type_error)) in (* другая ошибка *)
+              let new_env = extend new_env cont_val (veffect_continue cont) in
+              let* _, _, v = helper new_env handlers expr in
+              (match v with
+              | VThrowingValue n -> return (env, handlers, n)
+              | _ -> return (env, handlers, (vhandler_without_continue pat)))
+            | UnSuccessful -> fail (type_error)) (* другая ошибка *)
+          | _ -> fail (type_error))(**)
+        | _ -> fail (type_error)) (* в перформ может быть только эффект *)
       | EMatchWith (expr, cases) ->
         (* Если будет время, добавить обработку случая,
            когда паттерн мэтчится с эксрешеном,
@@ -325,7 +402,8 @@ module Interpreter (M : MONAD_ERROR) = struct
             let* flag, env' = Pattern.eval_pattern pat v in
             (match flag with
              | Pattern.Successful ->
-               let* _, _, result = helper env' handlers expr in
+              let env'' = compose env env' in 
+               let* _, _, result = helper env'' handlers expr in
                return (env, handlers, result)
              | Pattern.UnSuccessful -> match_cases env rest)
         in
