@@ -43,6 +43,7 @@ let pp_type ppf typ =
         tl
     | TEffect (TArr(_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t
+    | TContinuation -> Format.fprintf ppf "continuation"
   in 
   helper ppf typ
 ;;
