@@ -19,7 +19,7 @@ type value =
   | VEffectWithoutArguments of id (* DevisionByZero *)
   | VEffectContinue of continue_val (* continue k 0 - here k is the continuation variable *)
   | VThrowingValue of value (* continue k 0 - here 0 is the throwing value *)
-  | VHandlerWithoutContinue of pattern (* try ... with | DevisionByZero -> 0 - we don't continue the program, we just pass the value. *)
+  (* | VHandlerWithoutContinue of pattern try ... with | DevisionByZero -> 0 - we don't continue the program, we just pass the value. *)
 
 (* The environment contains the values ​​of let bindings and declared effects. *)
 (* Example: let f = 5 will be presented as (f, VInt 5) *)
@@ -43,7 +43,7 @@ let veffect_declaration n = VEffectDeclaration n
 let veffect_with_arguments n a = VEffectWithArguments (n, a)
 let veffect_without_arguments n = VEffectWithoutArguments n
 let veffect_continue k = VEffectContinue k
-let vhandler_without_continue p = VHandlerWithoutContinue p
+(* let vhandler_without_continue p = VHandlerWithoutContinue p *)
 let vthrowing_value v = VThrowingValue v
 
 (* ---------------- *)

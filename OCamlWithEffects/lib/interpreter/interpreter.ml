@@ -210,11 +210,11 @@ module Interpreter (M : MONAD_ERROR) = struct
       let env = empty in
       let rec helper =
         match handler, v with
-        | EffectHandler (p1, _, _), VHandlerWithoutContinue (p2) ->
+        (* | EffectHandler (p1, _, _), VHandlerWithoutContinue (p2) ->
           (* переделать: p2 (pattern) сделать value *)
           (match p1 = p2 with
           | true -> return (Successful, env)
-          | false -> return (UnSuccessful, env))
+          | false -> return (UnSuccessful, env)) *)
         | EffectHandler (p, _, _), ((VEffectWithoutArguments _) as v) -> eval_pattern p v
         | EffectHandler (p, _, _), ((VEffectWithArguments _) as v) -> eval_pattern p v
       in helper

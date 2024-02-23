@@ -28,9 +28,7 @@ let pp_value ppf typ =
   | VRecFun _ -> Format.fprintf ppf "<fun>"
   | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ -> Format.fprintf ppf "<effect>"
   | VEffectContinue k -> Format.fprintf ppf "<continue>"
-  | VHandlerWithoutContinue k -> Format.fprintf ppf "<aaa>"
   | VThrowingValue v -> Format.fprintf ppf "value"
-  (* | VHandlerWithoutContinue of pattern ??? *)
 in 
 helper ppf typ
 ;;
