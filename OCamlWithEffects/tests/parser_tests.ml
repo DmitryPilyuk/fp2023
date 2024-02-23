@@ -14,7 +14,8 @@ let print_parse_result s =
 
 let%expect_test _ =
   print_parse_result {| let rec f x = f (x - 1)|};
-  [%expect {|
+  [%expect
+    {|
     [(ERecDeclaration ("f",
         (EFun ((PVal "x"),
            (EApplication ((EIdentifier "f"),
@@ -22,13 +23,15 @@ let%expect_test _ =
            )),
         None))
       ] |}]
-  
+;;
+
 let%expect_test _ =
   print_parse_result {| let f = 
     let x = 5 in
     1 + x * 3
   |};
-  [%expect {|
+  [%expect
+    {|
     [(EDeclaration ("f",
         (EDeclaration ("x", (EConst (Int 5)),
            (Some (EBinaryOperation (Add, (EConst (Int 1)),
@@ -37,13 +40,13 @@ let%expect_test _ =
            )),
         None))
       ] |}]
-    ;;
+;;
 
 let%expect_test _ =
-print_parse_result {| let f x y = x + y 
+  print_parse_result {| let f x y = x + y 
 let main = f 4 6|};
-[%expect
-  {|
+  [%expect
+    {|
   [(EDeclaration ("f",
       (EFun ((PVal "x"),
          (EFun ((PVal "y"),
@@ -55,7 +58,7 @@ let main = f 4 6|};
           (EConst (Int 6)))),
        None))
     ] |}]
-  ;;
+;;
 
 (* ---------------- *)
 
@@ -128,7 +131,8 @@ let%expect_test _ =
 (* TryWith and Effects parser tests *)
 
 let%expect_test _ =
-   print_parse_result {|
+  print_parse_result
+    {|
       effect E : char -> int effect
 
       let helper x =
@@ -140,10 +144,13 @@ let%expect_test _ =
       let f = try helper 'b' with
       | E k -> continue k 3
       | E x k -> continue k 2
-   |}
+   |};
+  [%expect {| Syntax error. |}]
+;;
 
 let%expect_test _ =
-  print_parse_result {|
+  print_parse_result
+    {|
    effect DevisionByZero : int effect
 
    let helper x y = 
@@ -157,7 +164,8 @@ let%expect_test _ =
       | DevisionByZero k -> continue k 0
    ;;
   |};
-  [%expect {|
+  [%expect
+    {|
     [(EEffectDeclaration ("DevisionByZero", (AEffect AInt)));
       (EDeclaration ("helper",
          (EFun ((PVal "x"),
@@ -192,7 +200,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  print_parse_result {|
+  print_parse_result
+    {|
     effect E1 : int -> int effect
     effect E2 : int -> int effect
 
@@ -204,7 +213,8 @@ let%expect_test _ =
 
     let res = f (perform (E1)) in res
   |};
-  [%expect {|
+  [%expect
+    {|
     [(EEffectDeclaration ("E1", (AArrow (AInt, (AEffect AInt)))));
       (EEffectDeclaration ("E2", (AArrow (AInt, (AEffect AInt)))));
       (EDeclaration ("f",
@@ -228,13 +238,15 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  print_parse_result {|
+  print_parse_result
+    {|
     let f x = 
       try x with
       | E k -> 5
       | x k -> continue k 0
     |};
-  [%expect {|
+  [%expect
+    {|
     [(EDeclaration ("f",
         (EFun ((PVal "x"),
            (ETryWith ((EIdentifier "x"),
@@ -249,6 +261,7 @@ let%expect_test _ =
         None))
       ] |}]
 ;;
+
 (* ---------------- *)
 
 (* Binary, unary operation, ifthenelse and other parser tests *)
@@ -257,6 +270,39 @@ let%expect_test _ =
   print_parse_result {| let x = (1) |};
   [%expect {|
     [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
+;;
+
+let%expect_test _ =
+  print_parse_result {| 1 + 5 * 3 |};
+  [%expect
+    {|
+    [(EBinaryOperation (Add, (EConst (Int 1)),
+        (EBinaryOperation (Mul, (EConst (Int 5)), (EConst (Int 3))))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  print_parse_result {| 1 * (+5) / (-3) |};
+  [%expect
+    {|
+    [(EBinaryOperation (Div,
+        (EBinaryOperation (Mul, (EConst (Int 1)),
+           (EUnaryOperation (Plus, (EConst (Int 5)))))),
+        (EUnaryOperation (Minus, (EConst (Int 3))))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  print_parse_result {| if false || true && not false then "Yes" else "No" |};
+  [%expect
+    {|
+    [(EIfThenElse (
+        (EBinaryOperation (Or, (EConst (Bool false)),
+           (EBinaryOperation (And, (EConst (Bool true)),
+              (EUnaryOperation (Not, (EConst (Bool false))))))
+           )),
+        (EConst (String "Yes")), (EConst (String "No"))))
+      ] |}]
 ;;
 
 (* ---------------- *)

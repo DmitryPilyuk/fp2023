@@ -1,6 +1,5 @@
 (library
  (name tests)
- (modules Tessst)
  (libraries ocaml_with_effects_lib)
  (inline_tests)
  (preprocess
