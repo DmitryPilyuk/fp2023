@@ -5,32 +5,32 @@
 type id = string [@@deriving show { with_path = false }]
 
 type const =
-  | Char of char
-  | String of string
-  | Int of int
-  | Bool of bool
-  | Unit
+  | Char of char (** 'a' *)
+  | String of string (** "string" *)
+  | Int of int (** 1 *)
+  | Bool of bool (** true *)
+  | Unit (** () *)
 [@@deriving show { with_path = false }]
 
 type bin_op =
-  | Add
-  | Sub
-  | Mul
-  | Div
-  | Eq
-  | NEq
-  | Gt
-  | Gte
-  | Lt
-  | Lte
-  | And
-  | Or
+  | Add (** + *)
+  | Sub (** - *)
+  | Mul (** * *)
+  | Div (** / *)
+  | Eq (** = *)
+  | NEq (** <> *)
+  | Gt (** > *)
+  | Gte (** >= *)
+  | Lt (** < *)
+  | Lte (** <= *)
+  | And (** && *)
+  | Or (** || *)
 [@@deriving show { with_path = false }]
 
 type un_op =
-  | Not
-  | Minus
-  | Plus
+  | Not (** not *)
+  | Minus (** - *)
+  | Plus (** + *)
 [@@deriving show { with_path = false }]
 
 type effect_types_annotation =

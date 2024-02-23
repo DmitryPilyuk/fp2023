@@ -153,13 +153,15 @@ let parse_pattern =
   let parse_pattern_list_constr =
     chainr1 (parens self <|> parse_primitive_pattern) parse_pattern_list_constr
   in
-  choice
-    [ parse_pattern_list_constr
-    ; parse_pattern_with_args self
-    ; parse_primitive_pattern
-    ; parse_pattern_tuple self
-    ; parens self
-    ]
+  let p_parser =
+    choice
+      [ parse_pattern_list_constr
+      ; parse_pattern_with_args self
+      ; parse_primitive_pattern
+      ; parse_pattern_tuple self
+      ]
+  in
+  parse_pattern_with_args p_parser <|> p_parser
 ;;
 
 (* ---------------- *)
@@ -558,8 +560,6 @@ let parse_try_with pack =
 ;;
 
 let parse_perform pack =
-  fix
-  @@ fun self ->
   skip_wspace
   *>
   let perform = skip_wspace *> string "perform" <* skip_wspace in
