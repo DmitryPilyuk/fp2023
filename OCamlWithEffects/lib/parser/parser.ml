@@ -612,6 +612,7 @@ let parse_declaration pack =
       ; pack.parse_perform pack
       ; pack.parse_match_with pack
       ; pack.parse_try_with pack
+      ; pack.parse_effect_with_arguments pack
       ; parse_effect_without_arguments
       ; pack.parse_if_then_else pack
       ; parse_const
