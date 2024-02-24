@@ -322,6 +322,31 @@ let rec curry_tarr = function
   | typ -> typ
 ;;
 
+let rec check_unique_vars pattern =
+  (* Checks that all variables in the pattern are unique.
+     Used to detect severeal bound errors in tuple patterns,
+     list constructor patterns, and effects with arguments. *)
+  let rec helper var_set = function
+    | PVal v ->
+      (match (VarSet.mem v var_set) with
+      (* If at least one variable is found twice, we raise an error. *)
+      | true -> fail (several_bounds v)
+      | false -> return (VarSet.add v var_set))
+    | PAny -> return var_set
+    | PNill -> return var_set
+    | PConst _ -> return var_set
+    | PTuple pattern_list ->
+      RList.fold_left pattern_list ~init:(return(var_set)) ~f:helper
+    | PListCons (l, r) ->
+      let* left_set = helper var_set l in
+      helper left_set r
+    | PEffectWithoutArguments _ -> return var_set
+    | PEffectWithArguments (_, arg_pattern) ->
+      helper var_set arg_pattern
+  in
+  helper VarSet.empty pattern
+;;
+
 let infer_const c =
   let ty =
     match c with
@@ -375,6 +400,7 @@ let infer_pattern =
       let ty = ttuple (List.rev ty) in
       return (ty, env)
     | PListCons (l, r) as list_cons ->
+      let* _ = check_unique_vars list_cons in (* Check several bounds *)
       let* ty1, env1 = helper env l in
       let* ty2, env2 = helper env1 r in
       let* fv = fresh_var in
@@ -388,6 +414,7 @@ let infer_pattern =
       let* _, typ = lookup_env env name in
       return (typ, env)
     | PEffectWithArguments (name, arg_pattern) as eff ->
+      let* _ = check_unique_vars eff in (* Check several bounds *)
       let* _, effect_typ = lookup_env env name in
       (match effect_typ with
        | TArr (arg_typ, TEffect res_typ) ->
