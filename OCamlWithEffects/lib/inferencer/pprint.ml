@@ -79,6 +79,7 @@ let pp_error ppf error =
       pp_type typ
       pp_type expected_typ
   | `Not_effect_with_args name -> Format.fprintf ppf "Effect %s cannot take arguments - it is an effect without arguments." name
+  | `Perform_with_no_effect -> Format.fprintf ppf "The type of the argument passed to perform must be the effect typ."
 ;;
 
 let print_inferencer_error e =

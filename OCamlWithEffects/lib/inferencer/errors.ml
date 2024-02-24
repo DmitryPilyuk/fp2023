@@ -15,6 +15,7 @@ type error =
   | `Not_effect_in_handler
   | `Wrong_effect_typ of id * typ
   | `Not_effect_with_args of id
+  | `Perform_with_no_effect
   ]
 
 (* Constructors for types *)
@@ -28,4 +29,5 @@ let several_bounds name = `Several_bounds name
 let not_effect_in_handler = `Not_effect_in_handler
 let wrong_effect_type name typ = `Wrong_effect_typ (name, typ)
 let not_effect_with_args name = `Not_effect_with_args name
+let perform_with_no_effect = `Perform_with_no_effect
 (* ---------------- *)

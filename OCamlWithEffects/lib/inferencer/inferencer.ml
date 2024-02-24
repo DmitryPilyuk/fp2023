@@ -598,13 +598,15 @@ let infer_expr =
          let* sub = Subst.compose_all [ sub1; sub2; sub3 ] in
          return (sub, eff)
        | _ -> fail (not_effect_with_args name))
-      (* ДРУГАЯ ОШИБКА *)
     | EEffectPerform expr ->
       let* sub1, ty1 = helper env expr in
       (match ty1 with
-       | TEffect ty -> return (sub1, ty)
-       | _ -> fail not_reachable (* ДРУГАЯ ОШИБКА *))
-      (* ДРУГАЯ ОШИБКА *)
+      | TEffect _ | TVar _ ->
+        let* eff_ty = fresh_var in
+        let* sub2 = Subst.unify ty1 (teffect eff_ty) in
+        let ty = Subst.apply sub2 eff_ty in
+        return (sub2, ty)
+      | _ -> fail perform_with_no_effect)
     | ERecDeclaration (name, expr1, expr2) as rec_declaration ->
       let* fv = fresh_var in
       let env2 = TypeEnv.extend env name (Scheme (TVarSet.empty, fv)) in

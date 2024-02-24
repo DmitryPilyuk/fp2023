@@ -443,42 +443,6 @@ let parse_tuple pack =
        (many1 (skip_wspace *> string "," *> parse_expr))
 ;;
 
-let parse_application pack =
-  fix
-  @@ fun self ->
-  skip_wspace
-  *> (parens self
-      <|>
-      let function_parser =
-        choice
-          [ parens @@ pack.parse_fun pack
-          ; parens @@ pack.parse_let_in pack
-          ; parens @@ pack.parse_if_then_else pack
-          ; parens @@ pack.parse_match_with pack
-          ; parse_ident
-          ]
-      and operand_parser =
-        choice
-          [ parens @@ pack.parse_bin_op pack
-          ; parens @@ pack.parse_un_op pack
-          ; pack.parse_tuple pack
-          ; pack.parse_list pack
-          ; parens @@ pack.parse_list_cons pack
-          ; parens self
-          ; parens @@ pack.parse_fun pack
-          ; parens @@ pack.parse_match_with pack
-          ; parens @@ pack.parse_perform pack
-          ; parens @@ pack.parse_if_then_else pack
-          ; parens @@ pack.parse_let_in pack
-          ; parse_const
-          ; parse_ident
-          ]
-      in
-      let chainl acc = lift (eapplication acc) operand_parser in
-      let rec go acc = chainl acc >>= go <|> return acc in
-      function_parser >>= fun init -> chainl init >>= fun init -> go init)
-;;
-
 (* ---------------- *)
 
 (* Effect parsers *)
@@ -559,11 +523,49 @@ let parse_try_with pack =
   *> lift2 etry_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
 ;;
 
+let parse_application pack =
+  fix
+  @@ fun self ->
+  skip_wspace
+  *> (parens self
+      <|>
+      let function_parser =
+        choice
+          [ parens @@ pack.parse_fun pack
+          ; parens @@ pack.parse_let_in pack
+          ; parens @@ pack.parse_if_then_else pack
+          ; parens @@ pack.parse_match_with pack
+          ; parse_ident
+          ]
+      and operand_parser =
+        choice
+          [ parens @@ pack.parse_bin_op pack
+          ; parens @@ pack.parse_un_op pack
+          ; pack.parse_tuple pack
+          ; pack.parse_list pack
+          ; parens @@ pack.parse_list_cons pack
+          ; parens self
+          ; parens @@ pack.parse_fun pack
+          ; parens @@ pack.parse_match_with pack
+          ; parens @@ pack.parse_perform pack
+          ; parens @@ pack.parse_if_then_else pack
+          ; parens @@ pack.parse_let_in pack
+          ; parens @@ pack.parse_effect_with_arguments pack
+          ; parse_effect_without_arguments
+          ; parse_const
+          ; parse_ident
+          ]
+      in
+      let chainl acc = lift (eapplication acc) operand_parser in
+      let rec go acc = chainl acc >>= go <|> return acc in
+      function_parser >>= fun init -> chainl init >>= fun init -> go init)
+;;
+
 let parse_perform pack =
   skip_wspace
   *>
   let perform = skip_wspace *> string "perform" <* skip_wspace in
-  let* result = perform *> (parse_effect pack <|> parse_ident ) in
+  let* result = perform *> (parse_effect pack <|> parse_ident) in
   return (eeffect_perform result)
 ;;
 
