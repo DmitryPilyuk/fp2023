@@ -675,14 +675,11 @@ let infer_program env program =
          in
          let new_acc = return (new_env, update_name_list name acc_names) in
          helper new_acc tl
-       | _ -> return (env, []))
-    (* Unreachable *)
+        | _ -> fail (not_reachable))
   in
   let* env, names = helper (return (env, [])) program in
   return (env, List.rev names)
 ;;
-(* let envv = TypeEnv.extend (TypeEnv.empty) "k" (Scheme (TVarSet.empty, tcontinue_point))
-let run_expr_inferencer expr = Result.map snd (run (infer_expr envv expr))
-let run_program_inferencer program = run (infer_program envv program) *)
+
 let run_expr_inferencer expr = Result.map snd (run (infer_expr TypeEnv.empty expr))
 let run_program_inferencer program = run (infer_program TypeEnv.empty program)
