@@ -5,6 +5,7 @@
 open Typedtree
 open Ast
 open Errors
+open Auxiliary
 
 module R : sig
   type 'a t
@@ -468,6 +469,34 @@ let infer_expr =
         return (sub4, ty)
       in
       RList.fold_left cases ~init:(return (sub1, fv)) ~f
+    | ETryWith (expr, body) ->
+      let* sub, typ = helper env expr in
+      let* res =
+        RList.fold_left body ~init:(return (true)) ~f:(
+          fun acc handler ->
+            let acc = acc in
+            let* _, typ = (infer_handler env handler) in
+            (match typ with
+            | TContinuation _ -> return (true && acc)
+            | _ -> return (false && acc)) (* ДРУГАЯ ОШИБКА *)
+        )
+      in
+      (match res with
+      | true -> return (sub, typ)
+      | false -> fail(not_reachable)) (* ДРУГАЯ ОШИБКА *)
+    | EEffectContinue (cont, expr) ->
+      (match cont with
+      | Continue k ->
+        let cont_var = eidentifier k in
+        let* sub1, typ = helper env cont_var in
+        (match typ with
+        | TContinuePoint -> 
+          let* sub2, ty_expr = helper env expr in
+          let* sub = Subst.compose sub1 sub2 in
+          return (sub, tcontinuation typ ty_expr)
+        | _ -> fail (not_reachable) (* ДРУГАЯ ОШИБКА *)
+        )
+      | _ -> fail (not_reachable)) (* ДРУГАЯ ОШИБКА *)
     | EEffectDeclaration (name, annot) ->
       let* typ =
         match annot with
@@ -532,6 +561,20 @@ let infer_expr =
          let* sub2, t2 = helper env2 expr in
          let* sub3 = Subst.compose sub1 sub2 in
          return (sub3, t2))
+  and infer_handler env = function
+    | EffectHandler (pat, expr, cont) ->
+      (match pat with
+      | PEffectWithArguments (name, _) | PEffectWithoutArguments name ->
+        let* _ = lookup_env env name in
+        (match cont with
+        | Continue k -> 
+          let env' = TypeEnv.extend env k (Scheme (TVarSet.empty, tcontinue_point)) in
+          let* env'', typ = helper env' expr in
+          return (env'', typ)
+        | _ -> fail (not_reachable)) (* ДРУГУЮ ОШИБКУ *)
+      | _ -> fail (not_reachable)) (* ДРУГУЮ ОШИБКУ *)
+    | _ -> fail (not_reachable) (* ДРУГУЮ ОШИБКУ *)
+
   in
   helper
 ;;
@@ -560,6 +603,8 @@ let infer_program env program =
   let* env, names = helper (return (env, [])) program in
   return (env, List.rev names)
 ;;
-
+(* let envv = TypeEnv.extend (TypeEnv.empty) "k" (Scheme (TVarSet.empty, tcontinue_point))
+let run_expr_inferencer expr = Result.map snd (run (infer_expr envv expr))
+let run_program_inferencer program = run (infer_program envv program) *)
 let run_expr_inferencer expr = Result.map snd (run (infer_expr TypeEnv.empty expr))
 let run_program_inferencer program = run (infer_program TypeEnv.empty program)

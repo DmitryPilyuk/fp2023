@@ -19,7 +19,8 @@ type typ =
   | TTuple of typ list (* 'a * int * char *)
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
-  | TContinuation (* continuation *)
+  | TContinuePoint
+  | TContinuation of typ * typ
 
 module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables *)
 
@@ -39,5 +40,7 @@ let tarrow left right = TArr (left, right)
 let ttuple x = TTuple x
 let tlist x = TList x
 let teffect x = TEffect x
+let tcontinue_point = TContinuePoint
+let tcontinuation cont expr = TContinuation (cont, expr)
 let ( @-> ) = tarrow
 (* ---------------- *)
