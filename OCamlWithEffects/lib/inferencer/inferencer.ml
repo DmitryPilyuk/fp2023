@@ -423,7 +423,7 @@ let infer_pattern =
          let env'' = TypeEnv.apply env' sub in
          let effect_ty = Subst.apply sub (arg_typ @-> teffect res_typ) in
          return (effect_ty, env'')
-       | _ -> fail not_reachable)
+       | _ -> fail (not_effect_with_args name))
   in
   helper
 ;;
@@ -580,8 +580,8 @@ let infer_expr =
           let l_ty = annotation_to_type curr_l in
           let r_ty = annotation_to_type r in
           let ty = l_ty @-> r_ty in
-          (match r with
-           | AEffect _ -> return ty
+          (match r_ty with
+           | TEffect _ -> return ty
            | _ -> fail (wrong_effect_type name ty))
         | _ -> 
           let ty = annotation_to_type annot in
@@ -597,7 +597,7 @@ let infer_expr =
          let* sub3 = Subst.unify arg_ty ty2 in
          let* sub = Subst.compose_all [ sub1; sub2; sub3 ] in
          return (sub, eff)
-       | _ -> fail not_reachable)
+       | _ -> fail (not_effect_with_args name))
       (* ДРУГАЯ ОШИБКА *)
     | EEffectPerform expr ->
       let* sub1, ty1 = helper env expr in

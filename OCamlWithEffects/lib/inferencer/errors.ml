@@ -14,6 +14,7 @@ type error =
   | `Several_bounds of id (* A type variable is assigned more than one constraint. *)
   | `Not_effect_in_handler
   | `Wrong_effect_typ of id * typ
+  | `Not_effect_with_args of id
   ]
 
 (* Constructors for types *)
@@ -26,4 +27,5 @@ let not_reachable = `Not_reachable
 let several_bounds name = `Several_bounds name
 let not_effect_in_handler = `Not_effect_in_handler
 let wrong_effect_type name typ = `Wrong_effect_typ (name, typ)
+let not_effect_with_args name = `Not_effect_with_args name
 (* ---------------- *)
