@@ -23,6 +23,7 @@ type typ =
   | TContinuation of typ * typ
 
 module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables *)
+module VarSet = Stdlib.Set.Make (String)
 
 (* A schema of a type, 
    consisting of a set of variables qualified for that type

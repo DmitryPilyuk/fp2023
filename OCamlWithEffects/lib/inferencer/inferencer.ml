@@ -34,8 +34,10 @@ module R : sig
 
   val fresh : int t
   val run : 'a t -> ('a, error) Result.t
+
 end = struct
-  type 'a t = int -> int * ('a, error) Result.t
+
+  type 'a t = int -> int * ('a, error) Result.t (* State and Result monad composition *)
 
   let ( >>= ) : 'a 'b. 'a t -> ('a -> 'b t) -> 'b t =
     fun m f s ->
@@ -54,13 +56,14 @@ end = struct
   let return v last = last, Base.Result.return v
   let fail e state = state, Base.Result.fail e
   let bind x ~f = x >>= f
-  let fresh : int t = fun last -> last + 1, Result.Ok last
+  let fresh last = last + 1, Result.Ok last (* Get new state *)
 
   module Syntax = struct
-    let ( let* ) x f = bind x ~f
+    let ( let* ) x f = bind x ~f (* Syntactic sugar for bind *)
   end
 
   module RMap = struct
+    (* Classic map folding. *)
     let fold_left mp ~init ~f =
       let open Syntax in
       Base.Map.fold mp ~init ~f:(fun ~key ~data acc ->
@@ -70,6 +73,7 @@ end = struct
   end
 
   module RList = struct
+    (* Classic list folding. *)
     let fold_left lt ~init ~f =
       let open Syntax in
       Base.List.fold_left lt ~init ~f:(fun acc item ->
@@ -78,10 +82,14 @@ end = struct
     ;;
   end
 
+  (* Run the inference. We take the second element of the tuple, 
+     since that's where the result is. In the first there is only the last state. *)
   let run m = snd (m 0)
+
 end
 
 module Type = struct
+
   type t = typ
 
   (* Checks whether the passed type variable is contained in the passed type. *)
@@ -107,9 +115,11 @@ module Type = struct
     in
     helper TVarSet.empty
   ;;
+
 end
 
 module Subst : sig
+
   type t
 
   val empty : t
@@ -120,15 +130,20 @@ module Subst : sig
   val unify : typ -> typ -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
+
 end = struct
+
   open R
   open R.Syntax
 
-  type t = (int, typ, Base.Int.comparator_witness) Base.Map.t
+  (* A substitution is an map, where the first element of each list element is what needs to be replaced,
+    the second is what it should be replaced with. *)
+  type t = (int, typ, Base.Int.comparator_witness) Base.Map.t 
 
   let empty = Base.Map.empty (module Base.Int)
-  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
+
   (* Creates a pair if no error occurs. *)
+  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
 
   let singleton k v =
     let* k, v = mapping k v in
@@ -176,69 +191,80 @@ end = struct
     | TEffect typ1, TEffect typ2 -> unify typ1 typ2
     | _ -> fail (unification_failed l r)
 
+  (* Expanding the substitution with a new key-value. *)
   and extend k v sub =
     match find sub k with
     | None ->
       let v = apply sub v in
-      let* sub2 = singleton k v in
+      let* new_sub = singleton k v in
       let f1 ~key ~data acc =
         let* acc = acc in
-        let new_data = apply sub2 data in
+        let new_data = apply new_sub data in
         return (Base.Map.update acc key ~f:(fun _ -> new_data))
       in
-      Base.Map.fold sub ~init:(return sub2) ~f:f1
+      Base.Map.fold sub ~init:(return new_sub) ~f:f1
     | Some vl ->
-      let* sub2 = unify v vl in
-      compose sub sub2
+      let* new_sub = unify v vl in
+      compose sub new_sub
 
+  (* Two substitution's composition. *)
   and compose sub1 sub2 = RMap.fold_left sub2 ~init:(return sub1) ~f:extend
 
+  (* Composition of an arbitrary number of substitutions. *)
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
+
 end
 
 module Scheme = struct
+
+  (* Free vars - all unquantified type variables in a type. *)
   let free_vars = function
     | Scheme (bind_vars, ty) -> TVarSet.diff (Type.type_vars ty) bind_vars
   ;;
 
-  let occurs_in tvar = function
-    | Scheme (bind_vars, ty) ->
-      (not (TVarSet.mem tvar bind_vars)) && Type.occurs_in tvar ty
-  ;;
-
+  (* Apply substitution to all unquantified type variables in a type. *)
   let apply sub = function
     | Scheme (bind_vars, ty) ->
       let sub2 = TVarSet.fold (fun sub key -> Subst.remove key sub) bind_vars sub in
       Scheme (bind_vars, Subst.apply sub2 ty)
   ;;
+
 end
 
 module TypeEnv = struct
+  (* A type enviroment is a map, the key of each element of which is a string,
+    which is the name of the let-binding or effect-declration,
+    and the key is the schema of the type of expression to which the name is bound. *)
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
   let empty : t = Base.Map.empty (module Base.String)
 
-  let free_vars : t -> TVarSet.t =
-    fun env ->
+  (* Free vars of a type environment is the set of all non-quantified
+    type variables of all expressions in a given environment. *)
+  let free_vars env =
     Base.Map.fold
       ~init:TVarSet.empty
       ~f:(fun ~key:_ ~data acc -> TVarSet.union acc (Scheme.free_vars data))
       env
   ;;
 
-  let extend : t -> string -> scheme -> t =
-    fun env key schema -> Base.Map.update env key (fun _ -> schema)
-  ;;
+  (* Apply the substitution to each scheme from the enviroment. *)
+  let apply env sub = Base.Map.map env ~f:(Scheme.apply sub)
 
-  let apply : t -> Subst.t -> t = fun env sub -> Base.Map.map env ~f:(Scheme.apply sub)
+  let extend env key schema = Base.Map.update env key (fun _ -> schema) 
   let find env key = Base.Map.find env key
 end
 
 open R
 open R.Syntax
 
-let fresh_var = fresh >>| fun name -> tvar name
+(* Take out a new state, which is a new “type variable”
+   from the monad and wrap it in a type variable constructor.*)
+let fresh_var = fresh >>| fun name -> tvar name (* *)
 
+(* Create an expression type by using the altered scheme as follows:
+   we take all the quantified variables in the type and replace them
+   one by one with some type variable. *)
 let instantiate : scheme -> typ R.t =
   fun (Scheme (bind_var, ty)) ->
   TVarSet.fold
@@ -251,57 +277,29 @@ let instantiate : scheme -> typ R.t =
     (return ty)
 ;;
 
+(* Reverse process: create a scheme by using a given type and environment. *)
 let generalize : TypeEnv.t -> Type.t -> scheme =
   fun env ty ->
   let free = TVarSet.diff (Type.type_vars ty) (TypeEnv.free_vars env) in
   Scheme (free, ty)
 ;;
 
-let lookup_env env var_name =
-  match TypeEnv.find env var_name with
+let lookup_env env name =
+  (* If the passed name is defined in the enviroment,
+     create its type according to the scheme and return it.
+     Otherwise issue an error. *)
+  match TypeEnv.find env name with
   | Some scheme ->
     let* ty = instantiate scheme in
-    return (Subst.empty, ty)
-  | None -> fail (`Unbound_variable var_name)
-;;
-
-let infer_const c =
-  let ty =
-    match c with
-    | Ast.Int _ -> tint
-    | Ast.Bool _ -> tbool
-    | Ast.Char _ -> tchar
-    | Ast.String _ -> tstring
-    | Ast.Unit -> tunit
-  in
-  return (Subst.empty, ty)
-;;
-
-let infer_id env id =
-  match id with
-  | "_" ->
-    let* fv = fresh_var in
-    return (Subst.empty, fv)
-  | _ -> lookup_env env id
-;;
-
-let binary_operator_type operator =
-  match operator with
-  | Eq | NEq | Gt | Gte | Lt | Lte ->
-    let* fv = fresh_var in
-    return (fv, tbool)
-  | Add | Sub | Mul | Div -> return (tint, tint)
-  | And | Or -> return (tbool, tbool)
-;;
-
-let unary_operator_type operator =
-  match operator with
-  | Minus -> tint
-  | Plus -> tint
-  | Not -> tbool
+    return (Subst.empty, ty) (* An empty substitution is needed here only for type matching. *)
+  | None -> 
+    match is_upper name.[0] with
+    | true -> fail (unbound_effect name)
+    | false -> fail (unbound_variable name)
 ;;
 
 let annotation_to_type =
+  (* Convert a type annotation to a real type. *)
   let rec helper = function
     | AInt -> tint
     | ABool -> tbool
@@ -316,13 +314,38 @@ let annotation_to_type =
   helper
 ;;
 
+(* Converts an annotation to a curried representation:
+   from AArrow(AArow(AInt, ABool), AChar) to AArow(AInt, AArrow(ABool, AChar)) *)
 let rec curry_tarr = function
   | AArrow (AArrow (left, inner), right) ->
     AArrow (left, curry_tarr (AArrow (inner, right)))
   | typ -> typ
 ;;
 
+let infer_const c =
+  let ty =
+    match c with
+    | Ast.Int _ -> tint
+    | Ast.Bool _ -> tbool
+    | Ast.Char _ -> tchar
+    | Ast.String _ -> tstring
+    | Ast.Unit -> tunit
+  in
+  return (Subst.empty, ty) 
+;;
+
+let infer_id env id =
+  (* '_' - reserved for expressions whose result is not important to us. *)
+  match id with
+  | "_" ->
+    let* fv = fresh_var in
+    return (Subst.empty, fv)
+  | _ -> lookup_env env id
+;;
+
 let infer_pattern =
+  (* The result of the function is the type of the passed pattern
+     and the type environment in which this pattern is defined. *)
   let rec helper env = function
     | PVal v ->
       let* fv = fresh_var in
@@ -339,19 +362,19 @@ let infer_pattern =
     | PConst c ->
       let* _, ty = infer_const c in
       return (ty, env)
-    | PTuple pattern_list ->
-      (* несколько переменных в кортеже *)
+    | PTuple pattern_list as tuple_p ->
+      let* _ = check_unique_vars tuple_p in (* Check several bounds *)
       let* ty, env =
-        RList.fold_left
-          pattern_list
-          ~init:(return ([], env))
-          ~f:(fun (acc, env) pattern ->
-            let* ty1, env1 = helper env pattern in
-            return (ty1 :: acc, env1))
+      RList.fold_left
+        pattern_list
+        ~init:(return ([], env))
+        ~f:(fun (acc, env) pattern ->
+          let* ty1, env1 = helper env pattern in
+          return (ty1 :: acc, env1))
       in
-      return (ttuple @@ List.rev ty, env)
-    | PListCons (l, r) ->
-      (* несколько переменных в списке *)
+      let ty = ttuple (List.rev ty) in
+      return (ty, env)
+    | PListCons (l, r) as list_cons ->
       let* ty1, env1 = helper env l in
       let* ty2, env2 = helper env1 r in
       let* fv = fresh_var in
@@ -364,7 +387,7 @@ let infer_pattern =
     | PEffectWithoutArguments name ->
       let* _, typ = lookup_env env name in
       return (typ, env)
-    | PEffectWithArguments (name, arg_pattern) ->
+    | PEffectWithArguments (name, arg_pattern) as eff ->
       let* _, effect_typ = lookup_env env name in
       (match effect_typ with
        | TArr (arg_typ, TEffect res_typ) ->
@@ -378,36 +401,57 @@ let infer_pattern =
   helper
 ;;
 
+let binary_operator_type operator =
+  (* By binary operator determine:
+    (type of the left operand, type of the right operand, type of the result). *)
+  match operator with
+  | Eq | NEq | Gt | Gte | Lt | Lte ->
+    let* fv = fresh_var in
+    return (fv, fv, tbool)
+  | Add | Sub | Mul | Div -> return (tint, tint, tint)
+  | And | Or -> return (tbool, tbool, tbool)
+;;
+
+let unary_operator_type operator =
+  (* By unary operator determine:
+    (type of operand, type of the result) *)
+  match operator with
+  | Minus -> return (tint, tint)
+  | Plus -> return (tint, tint)
+  | Not -> return (tbool, tbool)
+;;
+
 let infer_expr =
   let rec helper env = function
     | EConst c -> infer_const c
     | EIdentifier id -> infer_id env id
     | EUnaryOperation (op, expr) ->
-      let op = unary_operator_type op in
+      let* arg_type, expr_type = unary_operator_type op in
       let* sub1, ty = helper env expr in
-      let* sub2 = Subst.unify ty op in
+      let* sub2 = Subst.unify ty arg_type in
       let* sub3 = Subst.compose sub1 sub2 in
-      return (sub3, op)
+      return (sub3, expr_type)
     | EBinaryOperation (op, expr1, expr2) ->
-      let* args_type, expr_type = binary_operator_type op in
-      let* sub_left, ty1 = helper env expr1 in
-      let* sub_right, ty2 = helper env expr2 in
-      let* sub1 = Subst.unify ty1 args_type in
-      let* sub2 = Subst.unify (Subst.apply sub1 ty2) args_type in
-      let* sub = Subst.compose_all [ sub_left; sub_right; sub1; sub2 ] in
+      let* arg_type1, arg_type2, expr_type = binary_operator_type op in
+      let* sub1, ty1 = helper env expr1 in
+      let* sub2, ty2 = helper env expr2 in
+      let* sub3 = Subst.unify ty1 arg_type1 in
+      let* sub4 = Subst.unify (Subst.apply sub1 ty2) arg_type2 in
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
       return (sub, expr_type)
     | EFun (pattern, expr) ->
       let* ty1, env1 = infer_pattern env pattern in
-      let* sub1, ty2 = helper env1 expr in
-      let result = Subst.apply sub1 ty1 @-> ty2 in
-      return (sub1, result)
+      let* sub, ty2 = helper env1 expr in
+      let result = Subst.apply sub ty1 @-> ty2 in
+      return (sub, result)
     | EApplication (func_expr, arg_expr) ->
       let* sub1, func_type = helper env func_expr in
       let* sub2, arg_type = helper (TypeEnv.apply env sub1) arg_expr in
       let* result_type = fresh_var in
       let* unify1 = Subst.unify (Subst.apply sub2 func_type) (arg_type @-> result_type) in
       let* sub3 = Subst.compose_all [ sub1; sub2; unify1 ] in
-      return (sub3, Subst.apply sub3 result_type)
+      let ty = Subst.apply sub3 result_type in
+      return (sub3, ty)
     | EIfThenElse (cond, branch1, branch2) ->
       let* sub1, ty1 = helper env cond in
       let* sub2, ty2 = helper env branch1 in
@@ -415,17 +459,18 @@ let infer_expr =
       let* sub4 = Subst.unify ty1 tbool in
       let* sub5 = Subst.unify ty2 ty3 in
       let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
-      return (sub, Subst.apply sub ty3)
+      let ty = Subst.apply sub ty3 in
+      return (sub, ty)
     | EListCons (l, r) ->
       let* sub1, ty1 = helper env l in
       let env2 = TypeEnv.apply env sub1 in
-      let* sub2, ty2 = helper env r in
+      let* sub2, ty2 = helper env2 r in
       let* fv = fresh_var in
       let* sub3 = Subst.unify (tlist ty1) fv in
       let* sub4 = Subst.unify ty2 fv in
-      let* sub5 = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
-      let ty = Subst.apply sub5 fv in
-      return (sub5, ty)
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
+      let ty = Subst.apply sub fv in
+      return (sub, ty)
     | EList expr_list ->
       let* fv = fresh_var in
       let rec infer_list acc = function
@@ -436,9 +481,10 @@ let infer_expr =
           let* sub = Subst.compose sub1 sub2 in
           infer_list (sub :: acc) tl
       in
-      let* subs, ty = infer_list [] expr_list in
-      let* final_sub = Subst.compose_all subs in
-      return (final_sub, Subst.apply final_sub ty)
+      let* sub, ty = infer_list [] expr_list in
+      let* sub = Subst.compose_all sub in
+      let ty = Subst.apply sub ty in
+      return (sub, ty)
     | ETuple expr_list ->
       let rec infer_tuple acc = function
         | [] -> return acc
@@ -451,22 +497,23 @@ let infer_expr =
       in
       let acc = Subst.empty, [] in
       let* sub, ty = infer_tuple acc expr_list in
-      return (sub, ttuple (List.rev_map (Subst.apply sub) ty))
+      let ty = ttuple (List.rev_map (Subst.apply sub) ty) in
+      return (sub, ty)
     | EMatchWith (expr, cases) ->
       let* sub1, ty1 = helper env expr in
       let env2 = TypeEnv.apply env sub1 in
       let* fv = fresh_var in
       let f acc case =
         let acc_sub, acc_ty = acc in
-        let pat, cexpr = case in
+        let pat, expr = case in
         let* pat_ty, pat_env = infer_pattern env2 pat in
         let* sub2 = Subst.unify ty1 pat_ty in
         let env3 = TypeEnv.apply pat_env sub2 in
-        let* cexpr_sub, cexpr_ty = helper env3 cexpr in
-        let* sub3 = Subst.unify cexpr_ty acc_ty in
-        let* sub4 = Subst.compose_all [ acc_sub; sub2; sub3; cexpr_sub ] in
-        let ty = Subst.apply sub4 acc_ty in
-        return (sub4, ty)
+        let* expr_sub, expr_ty = helper env3 expr in
+        let* sub3 = Subst.unify expr_ty acc_ty in
+        let* sub = Subst.compose_all [ acc_sub; expr_sub ; sub2; sub3; ] in
+        let ty = Subst.apply sub acc_ty in
+        return (sub, ty)
       in
       RList.fold_left cases ~init:(return (sub1, fv)) ~f
     | ETryWith (expr, body) ->
@@ -478,7 +525,7 @@ let infer_expr =
             let* _, typ = (infer_handler env handler) in
             (match typ with
             | TContinuation _ -> return (true && acc)
-            | _ -> return (false && acc)) (* ДРУГАЯ ОШИБКА *)
+            | _ -> return (false && acc))
         )
       in
       (match res with
@@ -502,16 +549,16 @@ let infer_expr =
         match annot with
         | AEffect _ as a -> return (annotation_to_type a)
         | AArrow (l, r) ->
+          let curr_l = curry_tarr l in
+          let l_ty = annotation_to_type curr_l in
+          let r_ty = annotation_to_type r in
+          let ty = l_ty @-> r_ty in
           (match r with
-           | AEffect _ ->
-             let curr_l = curry_tarr l in
-             let l_typ = annotation_to_type curr_l in
-             let r_typ = annotation_to_type r in
-             return (l_typ @-> r_typ)
-           | _ -> fail not_reachable)
-          (* ИЗМЕНИТЬ НА ДРУГУЮ ОШИБКУ *)
-        | _ -> fail not_reachable
-        (* ИЗМЕНИТЬ НА ДРУГУЮ ОШИБКУ *)
+           | AEffect _ -> return ty
+           | _ -> fail (wrong_effect_type name ty))
+        | _ -> 
+          let ty = annotation_to_type annot in
+          fail (wrong_effect_type name ty)
       in
       return (Subst.empty, typ)
     | EEffectWithoutArguments name -> lookup_env env name
@@ -564,16 +611,18 @@ let infer_expr =
   and infer_handler env = function
     | EffectHandler (pat, expr, cont) ->
       (match pat with
-      | PEffectWithArguments (name, _) | PEffectWithoutArguments name ->
+      | (PEffectWithArguments (name, _)) | (PEffectWithoutArguments name) ->
         let* _ = lookup_env env name in
+        let* _ = infer_pattern env pat in
         (match cont with
-        | Continue k -> 
-          let env' = TypeEnv.extend env k (Scheme (TVarSet.empty, tcontinue_point)) in
+        | Continue k ->
+          let schm = Scheme (TVarSet.empty, tcontinue_point) in
+          let env' = TypeEnv.extend env k schm in
           let* env'', typ = helper env' expr in
           return (env'', typ)
-        | _ -> fail (not_reachable)) (* ДРУГУЮ ОШИБКУ *)
-      | _ -> fail (not_reachable)) (* ДРУГУЮ ОШИБКУ *)
-    | _ -> fail (not_reachable) (* ДРУГУЮ ОШИБКУ *)
+        | _ -> fail not_reachable)
+      | _ -> fail not_effect_in_handler)
+    | _ -> fail not_reachable
 
   in
   helper

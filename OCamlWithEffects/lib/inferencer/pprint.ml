@@ -65,6 +65,19 @@ let pp_error ppf error =
       Format.fprintf ppf "Unbound effect '%s'" name
   | `Several_bounds name ->
       Format.fprintf ppf "Variable '%s' is bound several times" name
+  | `Not_effect_in_handler -> Format.fprintf ppf "Left side of effect handler can only contain an effect with continue."
+  | `Wrong_effect_typ (name, typ) ->
+    let expected_typ = 
+      (match typ with
+      | TArr (l, r) -> (l @-> (teffect r))
+      | _ -> teffect typ)
+    in
+    Format.fprintf
+      ppf
+      "Effect %s is of type %a, but type %a was expected."
+      name
+      pp_type typ
+      pp_type expected_typ
 ;;
 
 let print_inferencer_error e =

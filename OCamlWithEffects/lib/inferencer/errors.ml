@@ -12,6 +12,8 @@ type error =
   | `Unbound_effect of id (* An undeclared effect is used. *)
   | `Not_reachable (* Sections of code that will never be reached. *)
   | `Several_bounds of id (* A type variable is assigned more than one constraint. *)
+  | `Not_effect_in_handler
+  | `Wrong_effect_typ of id * typ
   ]
 
 (* Constructors for types *)
@@ -22,5 +24,6 @@ let unbound_variable name = `Unbound_variable name
 let unbound_effect name = `Unbound_effect name
 let not_reachable = `Not_reachable
 let several_bounds name = `Several_bounds name
-
+let not_effect_in_handler = `Not_effect_in_handler
+let wrong_effect_type name typ = `Wrong_effect_typ (name, typ)
 (* ---------------- *)
