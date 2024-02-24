@@ -557,7 +557,7 @@ let infer_expr =
       in
       (match res with
       | true -> return (sub, typ)
-      | false -> fail(not_reachable)) (* ДРУГАЯ ОШИБКА *)
+      | false -> fail(handler_without_continue))
     | EEffectContinue (cont, expr) ->
       (match cont with
       | Continue k ->
@@ -568,9 +568,9 @@ let infer_expr =
           let* sub2, ty_expr = helper env expr in
           let* sub = Subst.compose sub1 sub2 in
           return (sub, tcontinuation typ ty_expr)
-        | _ -> fail (not_reachable) (* ДРУГАЯ ОШИБКА *)
+        | _ -> fail (not_continue_val k)
         )
-      | _ -> fail (not_reachable)) (* ДРУГАЯ ОШИБКА *)
+      | _ -> fail (not_reachable))
     | EEffectDeclaration (name, annot) ->
       let* typ =
         match annot with

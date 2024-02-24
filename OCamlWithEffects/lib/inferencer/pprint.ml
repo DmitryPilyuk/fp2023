@@ -43,8 +43,8 @@ let pp_type ppf typ =
         tl
     | TEffect (TArr(_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t
-    | TContinuation (a, l) -> Format.fprintf ppf "continuation (%a)" helper l
-    | TContinuePoint -> Format.fprintf ppf "contccccinuation"
+    | TContinuation (a, l) -> Format.fprintf ppf "continuation %a %a" (helper) a helper (l) (* Unreachable, used artificially for debugging *)
+    | TContinuePoint -> Format.fprintf ppf "continue variable" (* Unreachable, used artificially for debugging *)
   in 
   helper ppf typ
 ;;
@@ -80,6 +80,8 @@ let pp_error ppf error =
       pp_type expected_typ
   | `Not_effect_with_args name -> Format.fprintf ppf "Effect %s cannot take arguments - it is an effect without arguments." name
   | `Perform_with_no_effect -> Format.fprintf ppf "The type of the argument passed to perform must be the effect typ."
+  | `Not_continue_val name -> Format.fprintf ppf "Variable %s is not continue variable. " name
+  | `Handler_without_continue -> Format.fprintf ppf "The effect handler does not contain a continuation."
 ;;
 
 let print_inferencer_error e =
