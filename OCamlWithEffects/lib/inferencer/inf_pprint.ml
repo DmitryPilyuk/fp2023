@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Typedtree
-open Inf_errors
 
 let pp_const_type ppf typ =
   match typ with

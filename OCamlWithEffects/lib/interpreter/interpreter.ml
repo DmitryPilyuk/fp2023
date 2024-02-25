@@ -360,7 +360,7 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _, v = helper env handlers expr in
         (match v with
          | VEffectWithArguments (name, _) | VEffectWithoutArguments name ->
-           let* effect_checker = find_effect env name in
+           let* _ = find_effect env name in
            let* handler = find_handler handlers name in
            (match handler with
             | pat, expr, cont ->
@@ -380,8 +380,7 @@ module Interpreter (M : MONAD_ERROR) = struct
                   | VThrowingValue n -> return (env, n)
                   | _ -> fail (handler_without_continue name))
                | UnSuccessful -> fail type_error)
-              (* другая ошибка *)
-            | _ -> fail type_error)
+              (* другая ошибка *))
          | _ -> fail type_error)
         (* в перформ может быть только эффект *)
       | EMatchWith (expr, cases) ->
