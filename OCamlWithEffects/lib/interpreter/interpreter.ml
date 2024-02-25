@@ -44,9 +44,7 @@ module Env (M : MONAD_ERROR) = struct
     | Some v -> return v
     | None -> fail (unbound_effect name)
   ;;
-  (* другая ошибка *)
 
-  (* UNBOUND VALUE *)
 end
 
 module Handlers (M : MONAD_ERROR) = struct
@@ -66,15 +64,93 @@ module Handlers (M : MONAD_ERROR) = struct
   let find_handler handlers name =
     match find_handler handlers name with
     | Some v -> return v
-    | None -> fail type_error
+    | None -> fail (unbound_handler name)
   ;;
-  (* другую ошибку *)
+
+end
+
+module Pattern (M : MONAD_ERROR)= struct
+  open M
+  open Env (M)
+
+  type match_flag =
+    | Successful
+    | UnSuccessful
+
+  let eval_const_pattern env pat v =
+    match pat, v with
+    | Int i1, VInt i2 when i1 = i2 -> return (Successful, env)
+    | Bool b1, VBool b2 when b1 = b2 -> return (Successful, env)
+    | Char c1, VChar c2 when c1 = c2 -> return (Successful, env)
+    | String s1, VString s2 when s1 = s2 -> return (Successful, env)
+    | Unit, VUnit -> return (Successful, env)
+    | Int _, VInt _ | Bool _, VBool _ | Char _, VChar _ | String _, VString _ ->
+      return (UnSuccessful, env)
+    | _ -> fail type_error
+  ;;
+
+  (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
+
+  let rec eval_pattern pat v =
+    let env = empty in
+    let helper =
+      match pat, v with
+      | PAny, _ -> return (Successful, env)
+      | PConst i, v -> eval_const_pattern env i v
+      | PNill, VList [] -> return (Successful, env)
+      | PVal name, v ->
+        let new_env = extend env name v in
+        return (Successful, new_env)
+      | PTuple pats, VTuple vs ->
+        let rec match_tuple env = function
+          | [], [] -> return (Successful, env)
+          | pat :: pats, v :: vs ->
+            let* flag, pat_env = eval_pattern pat v in
+            let new_env = compose env pat_env in
+            let result =
+              match flag with
+              | Successful -> match_tuple new_env (pats, vs)
+              | UnSuccessful -> return (UnSuccessful, new_env)
+            in
+            result
+          | _ -> return (UnSuccessful, env)
+        in
+        match_tuple env (pats, vs)
+      | PListCons (pat1, pat2), VList (v1 :: v2) ->
+        let* flag1, pat_env1 = eval_pattern pat1 v1 in
+        let* flag2, pat_env2 = eval_pattern pat2 (VList v2) in
+        let* env' =
+          match flag1, flag2 with
+          | Successful, Successful ->
+            let combined_env = compose pat_env1 pat_env2 in
+            return combined_env
+          | _ -> fail type_error (* Возможно, стоит вернуть другую ошибку*)
+        in
+        return (Successful, env')
+      | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
+        (match name1 = name2 with
+          | true -> return (Successful, env)
+          | false -> return (UnSuccessful, env))
+      | PEffectWithArguments (name1, pattern1), VEffectWithArguments (name2, value2) ->
+        (match name1 = name2 with
+          | false -> return (UnSuccessful, env)
+          | true ->
+            let* flag, new_env = eval_pattern pattern1 value2 in
+            (match flag with
+            | Successful -> return (Successful, new_env)
+            | UnSuccessful -> return (UnSuccessful, env)))
+      | _ -> fail type_error
+      (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
+    in
+    helper
+  ;;
 end
 
 module Interpreter (M : MONAD_ERROR) = struct
   open M
   open Env (M)
   open Handlers (M)
+  open Pattern (M)
 
   let eval_const env = function
     | Int i -> return (env, vint i)
@@ -82,6 +158,13 @@ module Interpreter (M : MONAD_ERROR) = struct
     | Unit -> return (env, vunit)
     | Char c -> return (env, vchar c)
     | String s -> return (env, vstring s)
+  ;;
+
+  let eval_un_op env = function
+  | Plus, VInt i -> return (env, vint (+i))
+  | Minus, VInt i -> return (env, vint (-i))
+  | Not, VBool b -> return (env, vbool (not b))
+  | Plus, _ | Minus, _ | Not, _ -> fail type_error
   ;;
 
   let eval_bin_op env = function
@@ -139,97 +222,15 @@ module Interpreter (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  let eval_un_op env = function
-    | Plus, VInt i -> return (env, vint (+i))
-    | Minus, VInt i -> return (env, vint (-i))
-    | Not, VBool b -> return (env, vbool (not b))
-    | Plus, _ | Minus, _ | Not, _ -> fail type_error
+  let rec eval_handler handler v =
+    let env = empty in
+    let rec helper =
+      match handler, v with
+      | EffectHandler (p, _, _), (VEffectWithoutArguments _ as v) -> eval_pattern p v
+      | EffectHandler (p, _, _), (VEffectWithArguments _ as v) -> eval_pattern p v
+    in
+    helper
   ;;
-
-  module Pattern = struct
-    type match_flag =
-      | Successful
-      | UnSuccessful
-
-    let eval_const_pattern env pat v =
-      (* ПЕРЕДАВАТЬ ENV ИЛИ ВСЕГДА ДЛЕТАЬ ПУСТОЙ? *)
-      match pat, v with
-      | Int i1, VInt i2 when i1 = i2 -> return (Successful, env)
-      | Bool b1, VBool b2 when b1 = b2 -> return (Successful, env)
-      | Char c1, VChar c2 when c1 = c2 -> return (Successful, env)
-      | String s1, VString s2 when s1 = s2 -> return (Successful, env)
-      | Unit, VUnit -> return (Successful, env)
-      | Int _, VInt _ | Bool _, VBool _ | Char _, VChar _ | String _, VString _ ->
-        return (UnSuccessful, env)
-      | _ -> fail type_error
-    ;;
-
-    (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
-
-    let rec eval_pattern pat v =
-      let env = empty in
-      let helper =
-        match pat, v with
-        | PAny, _ -> return (Successful, env)
-        | PConst i, v -> eval_const_pattern env i v
-        | PNill, VList [] -> return (Successful, env)
-        | PVal name, v ->
-          let new_env = extend env name v in
-          return (Successful, new_env)
-        | PTuple pats, VTuple vs ->
-          let rec match_tuple env = function
-            | [], [] -> return (Successful, env)
-            | pat :: pats, v :: vs ->
-              let* flag, pat_env = eval_pattern pat v in
-              let new_env = compose env pat_env in
-              let result =
-                match flag with
-                | Successful -> match_tuple new_env (pats, vs)
-                | UnSuccessful -> return (UnSuccessful, new_env)
-              in
-              result
-            | _ -> return (UnSuccessful, env)
-          in
-          match_tuple env (pats, vs)
-        | PListCons (pat1, pat2), VList (v1 :: v2) ->
-          let* flag1, pat_env1 = eval_pattern pat1 v1 in
-          let* flag2, pat_env2 = eval_pattern pat2 (VList v2) in
-          let* env' =
-            match flag1, flag2 with
-            | Successful, Successful ->
-              let combined_env = compose pat_env1 pat_env2 in
-              return combined_env
-            | _ -> fail type_error (* Возможно, стоит вернуть другую ошибку*)
-          in
-          return (Successful, env')
-        | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
-          (match name1 = name2 with
-           | true -> return (Successful, env)
-           | false -> return (UnSuccessful, env))
-        | PEffectWithArguments (name1, pattern1), VEffectWithArguments (name2, value2) ->
-          (match name1 = name2 with
-           | false -> return (UnSuccessful, env)
-           | true ->
-             let* flag, new_env = eval_pattern pattern1 value2 in
-             (match flag with
-              | Successful -> return (Successful, new_env)
-              | UnSuccessful -> return (UnSuccessful, env)))
-        | _ -> fail type_error
-        (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
-      in
-      helper
-    ;;
-
-    let rec eval_handler handler v =
-      let env = empty in
-      let rec helper =
-        match handler, v with
-        | EffectHandler (p, _, _), (VEffectWithoutArguments _ as v) -> eval_pattern p v
-        | EffectHandler (p, _, _), (VEffectWithArguments _ as v) -> eval_pattern p v
-      in
-      helper
-    ;;
-  end
 
   let eval =
     let rec helper env handlers = function
@@ -296,13 +297,13 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _, v2 = helper env handlers e in
         (match v1 with
          | VFun (pat, exp, fun_env) ->
-           let* flag, pat_env = Pattern.eval_pattern pat v2 in
+           let* flag, pat_env = eval_pattern pat v2 in
            checker flag fun_env pat_env env handlers exp
          | VRecFun (name, v) ->
            (match v with
             | VFun (pat, exp, fun_env) ->
               let fun_env = extend fun_env name v1 in
-              let* flag, pat_env = Pattern.eval_pattern pat v2 in
+              let* flag, pat_env = eval_pattern pat v2 in
               checker flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
@@ -364,7 +365,7 @@ module Interpreter (M : MONAD_ERROR) = struct
            let* handler = find_handler handlers name in
            (match handler with
             | pat, expr, cont ->
-              let* flag, pat_env = Pattern.eval_pattern pat v in
+              let* flag, pat_env = eval_pattern pat v in
               (match flag with
                | Successful ->
                  let new_env = compose env pat_env in
@@ -388,13 +389,13 @@ module Interpreter (M : MONAD_ERROR) = struct
         let rec match_cases env = function
           | [] -> fail type_error (* Исправить потом на другую ошибку *)
           | (pat, expr) :: rest ->
-            let* flag, env' = Pattern.eval_pattern pat v in
+            let* flag, env' = eval_pattern pat v in
             (match flag with
-             | Pattern.Successful ->
+             | Successful ->
                let env'' = compose env env' in
                let* _, result = helper env'' handlers expr in
                return (env, result)
-             | Pattern.UnSuccessful -> match_cases env rest)
+             | UnSuccessful -> match_cases env rest)
         in
         match_cases env cases
     and list_and_tuple_helper env = function
@@ -440,22 +441,13 @@ module Interpreter (M : MONAD_ERROR) = struct
   ;;
 end
 
-module Eval : MONAD_ERROR with type ('a, 'err) t = ('a, 'err) Result.t = struct
-  type ('a, 'err) t = ('a, 'err) Result.t
-
-  let return a = Result.Ok a
-  let fail err = Result.Error err
-
-  let ( >>= ) a f =
-    match a with
-    | Result.Ok v -> f v
-    | Result.Error err -> fail err
-  ;;
+module RESULT_MONAD_ERROR = struct
+  include Base.Result
 
   let ( let* ) = ( >>= )
 end
 
-module InterpreterR = Interpreter (Eval)
+module InterpreterWithResultMonad = Interpreter (RESULT_MONAD_ERROR)
 
-let run_expr_interpreter = InterpreterR.interpret_expr
-let run_program_interpreter = InterpreterR.interpret_program
+let run_expr_interpreter = InterpreterWithResultMonad.interpret_expr
+let run_program_interpreter = InterpreterWithResultMonad.interpret_program

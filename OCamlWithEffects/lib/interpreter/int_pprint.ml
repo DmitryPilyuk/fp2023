@@ -40,7 +40,7 @@ let pp_error ppf error =
   | `Non_existen_operation -> Format.fprintf ppf "Non-existent operation." (* ??? *)
   | `Non_existen_type -> Format.fprintf ppf "Non-existent type." (* ??? *)
   | `Type_error -> Format.fprintf ppf "Type error: please use type inference for more information."
-  | `Unbound_handler id -> Format.fprintf ppf "Unbound variable '%s'." id (* ??? *)
+  | `Unbound_handler id -> Format.fprintf ppf "Error: no suitable handler was found for effect '%s'." id (* ??? *)
   | `Handler_without_continue name -> Format.fprintf ppf "The handler for effect '%s' does not contain the expressions needed to continue." name
 ;;
 
