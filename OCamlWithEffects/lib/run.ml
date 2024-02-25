@@ -2,12 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
 open Parser
 open Pprint
 open Pprinti
 open Pprintp
-open Typedtree
 open Inferencer
 open Interpreter
 open Errorsp

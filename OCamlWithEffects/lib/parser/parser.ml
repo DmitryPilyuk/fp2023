@@ -123,7 +123,7 @@ let parse_pattern_effect_without_args =
   skip_wspace *> lift peffect_without_args parse_capitalized_name
 ;;
 
-let parse_pattern_with_args pattern_parser =
+let parse_pattern_effect_with_args pattern_parser =
   skip_wspace *> lift2 peffect_with_args parse_capitalized_name pattern_parser
 ;;
 
@@ -156,12 +156,12 @@ let parse_pattern =
   let p_parser =
     choice
       [ parse_pattern_list_constr
-      ; parse_pattern_with_args self
+      ; parse_pattern_effect_with_args self
       ; parse_primitive_pattern
       ; parse_pattern_tuple self
       ]
   in
-    parse_pattern_with_args p_parser <|> p_parser
+  parse_pattern_effect_with_args p_parser <|> p_parser
 ;;
 
 (* ---------------- *)

@@ -4,7 +4,6 @@
 
 open Typedtree
 open Errors
-open Inferencer
 
 let pp_const_type ppf typ =
   match typ with

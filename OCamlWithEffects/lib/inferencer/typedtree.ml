@@ -19,11 +19,11 @@ type typ =
   | TTuple of typ list (* 'a * int * char *)
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
-  | TContinuePoint
-  | TContinuation of typ * typ
+  | TContinuePoint (* continue k 0 - here k type is continue point *)
+  | TContinuation of typ * typ (* expression 'continue k x' type is continuation *)
 
-module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables *)
-module VarSet = Stdlib.Set.Make (String)
+module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables. *)
+module VarSet = Stdlib.Set.Make (String) (* Set, that storing variables (let-binds and effect declarations). *)
 
 (* A schema of a type, 
    consisting of a set of variables qualified for that type

@@ -1,9 +1,8 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Parser
 open Values
 open Errorsi
 
@@ -153,7 +152,7 @@ module Interpreter (M : MONAD_ERROR) = struct
 
     let rec eval_pattern pat v =
       let env = empty in
-      let rec helper =
+      let helper =
         match pat, v with
         | PAny, _ -> return (Successful, env)
         | PConst i, v -> eval_const_pattern env i v

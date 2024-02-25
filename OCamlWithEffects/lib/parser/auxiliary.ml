@@ -9,7 +9,7 @@ open Angstrom
 
 type ast_type =
   | DeclarationList (* [EDeclaration(...), ERecDeclaration(...), EFfectDeclaration(...)] *)
-  | MixedList (* [EDeclaration(...), EBinaryOperation(...) ]*)
+  | MixedList (* [EDeclaration(...), EBinaryOperation(...)]*)
   | FreeExpression (* UnaryOperation(...) *)
 
 (* This function, given an ast, determines whether ast is a program (a list of declarations),

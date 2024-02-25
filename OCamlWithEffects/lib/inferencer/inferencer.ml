@@ -651,7 +651,7 @@ let infer_expr =
           return (env'', typ)
         | _ -> fail not_reachable)
       | _ -> fail not_effect_in_handler)
-    | _ -> fail not_reachable
+    (* | _ -> fail not_reachable *)
 
   in
   helper
