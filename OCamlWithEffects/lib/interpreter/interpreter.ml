@@ -284,15 +284,7 @@ module Interpreter (M : MONAD_ERROR) = struct
         (match v1 with
          | VFun (pat, exp, fun_env) ->
            let* flag, pat_env = Pattern.eval_pattern pat v2 in
-           let checker =
-             match flag with
-             | Successful ->
-               let new_env = compose fun_env pat_env in
-               let* _, _, v = helper new_env handlers exp in
-               return (env, handlers, v)
-             | UnSuccessful -> fail type_error (* Другая ошибка *)
-           in
-           checker
+           checker flag fun_env pat_env env handlers exp
          | VRecFun (name, v) ->
            (match v with
             | VFun (pat, exp, fun_env) ->
