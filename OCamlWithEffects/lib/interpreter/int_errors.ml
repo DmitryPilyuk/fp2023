@@ -7,17 +7,17 @@ open Ast
 type error =
   [ `Devision_by_zero
   | `Unbound_variable of id
-  | `Unbound_effect of id 
+  | `Unbound_effect of id
   | `Unbound_handler of id
   | `Non_existen_operation
   | `Non_existen_type
-  (* | `Not_exhaustive_match *)
-  | `Type_error
+  | (* | `Not_exhaustive_match *)
+    `Type_error
   | `Handler_without_continue of id
   ]
 
 (* Constructors for types *)
-let devision_by_zero = `Devision_by_zero
+let division_by_zero = `Division_by_zero
 let unbound_variable name = `Unbound_variable name
 let unbound_effect name = `Unbound_effect name
 let non_existen_operation = `Non_existen_operation
