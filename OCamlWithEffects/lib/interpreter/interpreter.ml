@@ -272,25 +272,9 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _, _, v = helper new_env handlers expression in
         return (env, handlers, v)
       | ERecDeclaration (name, expr, None) ->
-        (* Если будет время, обработать случа let rec f = f *)
-        (* Если будет время, вынести в отдельную взаимно-рекурсивную с helper функцию общие выражения у одного и следующего блока*)
-        let* env, _, v = helper env handlers expr in
-        let res =
-          match v with
-          | VFun (_, _, _) -> vrecfun name v
-          | _ -> v
-        in
-        let new_env = extend env name res in
-        return (new_env, handlers, res)
+        rec_declaration_helper env handlers name expr
       | ERecDeclaration (name, expr, Some expression) ->
-        (* Если будет время, обработать случа let rec f = f *)
-        let* env, _, v = helper env handlers expr in
-        let res =
-          match v with
-          | VFun (_, _, _) -> vrecfun name v
-          | _ -> v
-        in
-        let new_env = extend env name res in
+        let* new_env, _, _ = rec_declaration_helper env handlers name expr in
         let* _, _, v = helper new_env handlers expression in
         return (env, handlers, v)
       | EApplication (f, e) ->
@@ -314,15 +298,7 @@ module Interpreter (M : MONAD_ERROR) = struct
             | VFun (pat, exp, fun_env) ->
               let fun_env = extend fun_env name v1 in
               let* flag, pat_env = Pattern.eval_pattern pat v2 in
-              let checker =
-                match flag with
-                | Successful ->
-                  let new_env = compose fun_env pat_env in
-                  let* _, _, v = helper new_env handlers exp in
-                  return (env, handlers, v)
-                | UnSuccessful -> fail type_error (* Другая ошибка *)
-              in
-              checker
+              checker flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
       | EEffectDeclaration (name, _) ->
@@ -429,6 +405,22 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* env, _, value = helper env empty_handler expr in
         let* env, rest_values = list_and_tuple_helper env rest in
         return (env, value :: rest_values)
+    and rec_declaration_helper env handlers name expr =
+      let* env, _, v = helper env handlers expr in
+      let res =
+        match v with
+        | VFun (_, _, _) -> vrecfun name v
+        | _ -> v
+      in
+      let new_env = extend env name res in
+      return (new_env, handlers, res)
+    and checker flag fun_env pat_env env handlers exp =
+      match flag with
+      | Successful ->
+        let new_env = compose fun_env pat_env in
+        let* _, _, v = helper new_env handlers exp in
+        return (env, handlers, v)
+      | UnSuccessful -> fail type_error (* Другая ошибка *)
     in
     helper
   ;;
