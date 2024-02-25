@@ -91,6 +91,7 @@ module Pattern (M : MONAD_ERROR) = struct
       | PAny, _ -> return (Successful, env)
       | PConst i, v -> eval_const_pattern env i v
       | PNill, VList [] -> return (Successful, env)
+      | PNill, _ -> return (UnSuccessful, env)
       | PVal name, v ->
         let new_env = extend env name v in
         return (Successful, new_env)
