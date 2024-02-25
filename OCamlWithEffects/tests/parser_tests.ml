@@ -269,7 +269,7 @@ let%expect_test _ =
 let binary_int_of_str n = match n with
 | "0" -> 0
 | "1" -> 1 
-| s -> perform (Failure s);;
+| s -> perform (E s);;
 
 let rec sum_up li = match li with
 | [] -> 0
@@ -279,7 +279,8 @@ let test_l = ["1"; "a"; "0"; "1"];;
 let res = try sum_up test_l with
 | E k -> continue k 0 in
 res;;|};
-  [%expect {|
+  [%expect
+    {|
     [(EEffectDeclaration ("E", (AArrow (AString, (AEffect AInt)))));
       (EDeclaration ("binary_int_of_str",
          (EFun ((PVal "n"),
@@ -287,8 +288,7 @@ res;;|};
                [((PConst (String "0")), (EConst (Int 0)));
                  ((PConst (String "1")), (EConst (Int 1)));
                  ((PVal "s"),
-                  (EEffectPerform
-                     (EEffectWithArguments ("Failure", (EIdentifier "s")))))
+                  (EEffectPerform (EEffectWithArguments ("E", (EIdentifier "s")))))
                  ]
                ))
             )),
