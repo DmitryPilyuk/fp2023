@@ -269,16 +269,18 @@ let%expect_test _ =
 let binary_int_of_str n = match n with
 | "0" -> 0
 | "1" -> 1 
-| s -> perform (E s);;
+| s -> perform (E s)
+;;
 
 let rec sum_up li = match li with
 | [] -> 0
-| s :: ss -> binary_int_of_str s + sum_up ss;;
+| s :: ss -> binary_int_of_str s + sum_up ss
+;;
 
 let test_l = ["1"; "a"; "0"; "1"];;
 let res = try sum_up test_l with
-| E k -> continue k 0 in
-res;;|};
+| (E x) k -> continue k 0
+;;|};
   [%expect
     {|
     [(EEffectDeclaration ("E", (AArrow (AString, (AEffect AInt)))));
@@ -315,12 +317,12 @@ res;;|};
       (EDeclaration ("res",
          (ETryWith (
             (EApplication ((EIdentifier "sum_up"), (EIdentifier "test_l"))),
-            [(EffectHandler ((PEffectWithoutArguments "E"),
+            [(EffectHandler ((PEffectWithArguments ("E", (PVal "x"))),
                 (EEffectContinue ((Continue "k"), (EConst (Int 0)))),
                 (Continue "k")))
               ]
             )),
-         (Some (EIdentifier "res"))))
+         None))
       ] |}]
 ;;
 

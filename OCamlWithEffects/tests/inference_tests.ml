@@ -101,22 +101,4 @@ let%expect_test _ =
   [%expect {| val f : 'a -> 'e -> 'a * 'e |}]
 ;;
 
-let%expect_test _ =
-  interpret
-    {| effect E: string -> int effect;;
-
-let binary_int_of_str n = match n with
-| "0" -> 0
-| "1" -> 1 
-| s -> perform (E s);;
-
-let rec sum_up li = match li with
-| [] -> 0
-| s :: ss -> binary_int_of_str s + sum_up ss;;
-
-let test_l = ["1"; "a"; "0"; "1"];;
-let res = try sum_up test_l with
-| E k -> continue k 0 in
-res;;|}
-;;
 (* ---------------- *)
