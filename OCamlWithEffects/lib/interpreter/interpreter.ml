@@ -77,7 +77,6 @@ module Interpreter (M : MONAD_ERROR) = struct
   open Handlers (M)
 
   let eval_const env handlers = function
-    (* нужно in в eval или пусть глобальной будет? *)
     | Int i -> return (env, handlers, vint i)
     | Bool b -> return (env, handlers, vbool b)
     | Unit -> return (env, handlers, vunit)
@@ -261,17 +260,15 @@ module Interpreter (M : MONAD_ERROR) = struct
           match v with
           | VBool true -> helper env handlers b1
           | VBool false -> helper env handlers b2
-          | _ -> fail type_error (* Мб другая ошибка *)
+          | _ -> fail type_error
         in
         res
       | EFun (pat, expr) -> return (env, handlers, vfun pat expr env)
       | ETuple expr_list ->
-        (* насчет инвайромента подумать *)
-        let* env, values = list_and_tuple_helper env expr_list in
+        let* _, values = list_and_tuple_helper env expr_list in
         return (env, handlers, vtuple values)
       | EList expr_list ->
-        (* насчет инвайромента подумать *)
-        let* env, values = list_and_tuple_helper env expr_list in
+        let* _, values = list_and_tuple_helper env expr_list in
         return (env, handlers, vlist values)
       | EListCons (e1, e2) ->
         let* _, _, v1 = helper env handlers e1 in
@@ -313,7 +310,7 @@ module Interpreter (M : MONAD_ERROR) = struct
               checker flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
-      | EEffectDeclaration (name, annot) ->
+      | EEffectDeclaration (name, _) ->
         let v = veffect_declaration name in
         let new_env = extend env name v in
         return (new_env, handlers, v)
@@ -392,13 +389,6 @@ module Interpreter (M : MONAD_ERROR) = struct
          | _ -> fail type_error)
         (* в перформ может быть только эффект *)
       | EMatchWith (expr, cases) ->
-        (* Если будет время, добавить обработку случая,
-           когда паттерн мэтчится с эксрешеном,
-           но при этом следующий паттерн являтся не допустимым
-           и нужно кинуть ошибку.
-
-           Делать в последнюю очередь, так как это уже обрабатывается в inferece.
-        *)
         let* _, _, v = helper env handlers expr in
         let rec match_cases env = function
           | [] -> fail type_error (* Исправить потом на другую ошибку *)

@@ -34,13 +34,13 @@ helper ppf typ
 
 let pp_error ppf error =
   match error with
-  | `Devision_by_zero -> Format.fprintf ppf "Division by zero."
-  | `Unbound_variable name -> Format.fprintf ppf "Unbound variable '%s'." name
-  | `Unbound_effect name -> Format.fprintf ppf "Unbound effect '%s'." name
-  | `Non_existen_operation -> Format.fprintf ppf "Non-existent operation."
-  | `Non_existen_type -> Format.fprintf ppf "Non-existent type."
-  | `Type_error -> Format.fprintf ppf "Type error."
-  | `Unbound_handler id -> Format.fprintf ppf "Unbound variable '%s'." id
+  | `Devision_by_zero -> Format.fprintf ppf "Error: division by zero."
+  | `Unbound_variable name -> Format.fprintf ppf "Error: unbound variable '%s'." name
+  | `Unbound_effect name -> Format.fprintf ppf "Error: unbound effect '%s'." name
+  | `Non_existen_operation -> Format.fprintf ppf "Non-existent operation." (* ??? *)
+  | `Non_existen_type -> Format.fprintf ppf "Non-existent type." (* ??? *)
+  | `Type_error -> Format.fprintf ppf "Type error: please use type inference for more information."
+  | `Unbound_handler id -> Format.fprintf ppf "Unbound variable '%s'." id (* ??? *)
   | `Handler_without_continue name -> Format.fprintf ppf "The handler for effect '%s' does not contain the expressions needed to continue." name
 ;;
 
