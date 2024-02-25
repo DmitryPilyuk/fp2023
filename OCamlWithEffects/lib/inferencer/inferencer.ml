@@ -580,7 +580,6 @@ let infer_expr =
       let rec infer_tuple acc = function
         | [] -> return acc
         | hd :: tl ->
-          (* Here the list in reverse order! *)
           let* sub1, ty1 = helper env hd in
           let acc_sub, acc_ty = acc in
           let* sub2 = Subst.compose sub1 acc_sub in
@@ -674,9 +673,9 @@ let infer_expr =
 ;;
 
 let infer_program env program =
-  (* We go through the list and take turns making expressions.
+  (* Go through the list and take turns making expressions.
      Since map is strictly ordered to output all names in the order in which they 
-     were declared, we provide a list of let binding names and the effect of declashanes. *)
+     were declared, provide a list of let binding names and the effect of declashanes. *)
   let rec helper acc = function
     | [] -> acc
     | hd :: tl ->
