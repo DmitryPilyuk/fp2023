@@ -16,7 +16,8 @@ module type MONAD_ERROR = sig
   val ( let* )
     :  ('a, 'e) t
     -> ('a -> ('b, 'e) t)
-    -> ('b, 'e) t (* возможно вынести в модуль Syntax *)
+    -> ('b, 'e) t
+
 end
 
 module Env (M : MONAD_ERROR) = struct
@@ -41,7 +42,7 @@ module Env (M : MONAD_ERROR) = struct
   let find_effect env name =
     match find env name with
     | Some v -> return v
-    | None -> fail (unbound_variable name)
+    | None -> fail (unbound_effect name)
   ;;
   (* другая ошибка *)
 
@@ -97,18 +98,42 @@ module Interpreter (M : MONAD_ERROR) = struct
       res
     | And, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 && b2))
     | Or, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 || b2))
+
     | Eq, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 = i2))
     | Eq, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 = c2))
     | Eq, VString s1, VString s2 -> return (env, handlers, vbool (s1 = s2))
     | Eq, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 = b2))
+    | Eq, VUnit, VUnit -> return (env, handlers, vbool (true))
+
     | NEq, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 <> i2))
     | NEq, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 <> c2))
     | NEq, VString s1, VString s2 -> return (env, handlers, vbool (s1 <> s2))
     | NEq, VBool b1, VBool b2 -> return (env, handlers, vbool (b1 <> b2))
+    | NEq, VUnit, Vunit -> return (env, handlers, vbool (false))
+
     | Gt, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 > i2))
+    | Gt, VBool _, VBool _ -> return (env, handlers, vbool (false))
+    | Gt, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 > c2))
+    | Gt, VString s1, VString s2 -> return (env, handlers, vbool (s1 > s2))
+    | Gt, VUnit, VUnit -> return (env, handlers, vbool (false))
+
     | Lt, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 < i2))
+    | Lt, VBool _, VBool _ -> return (env, handlers, vbool (false))
+    | Lt, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 < c2))
+    | Lt, VString s1, VString s2 -> return (env, handlers, vbool (s1 < s2))
+    | Lt, VUnit, VUnit -> return (env, handlers, vbool (false))
+
     | Gte, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 >= i2))
+    | Gte, VBool _, VBool _ -> return (env, handlers, vbool (false))
+    | Gte, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 >= c2))
+    | Gte, VString s1, VString s2 -> return (env, handlers, vbool (s1 >= s2))
+    | Gte, VUnit, VUnit -> return (env, handlers, vbool (false))
+
     | Lte, VInt i1, VInt i2 -> return (env, handlers, vbool (i1 <= i2))
+    | Lte, VBool _, VBool _ -> return (env, handlers, vbool (false))
+    | Lte, VChar c1, VChar c2 -> return (env, handlers, vbool (c1 <= c2))
+    | Lte, VString s1, VString s2 -> return (env, handlers, vbool (s1 <= s2))
+    | Lte, VUnit, VUnit -> return (env, handlers, vbool (false))
     | Add, _, _
     | Sub, _, _
     | Mul, _, _
@@ -208,11 +233,6 @@ module Interpreter (M : MONAD_ERROR) = struct
       let env = empty in
       let rec helper =
         match handler, v with
-        (* | EffectHandler (p1, _, _), VHandlerWithoutContinue (p2) ->
-           (* переделать: p2 (pattern) сделать value *)
-           (match p1 = p2 with
-           | true -> return (Successful, env)
-           | false -> return (UnSuccessful, env)) *)
         | EffectHandler (p, _, _), (VEffectWithoutArguments _ as v) -> eval_pattern p v
         | EffectHandler (p, _, _), (VEffectWithArguments _ as v) -> eval_pattern p v
       in
@@ -301,15 +321,17 @@ module Interpreter (M : MONAD_ERROR) = struct
               checker flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
-      | EEffectDeclaration (name, _) ->
+      | EEffectDeclaration (name, annot) ->
         let v = veffect_declaration name in
         let new_env = extend env name v in
         return (new_env, handlers, v)
       | EEffectWithArguments (name, expr) ->
+        let* _ = find_effect env name in
         let* _, _, v1 = helper env handlers expr in
         let v2 = veffect_with_arguments name v1 in
         return (env, handlers, v2)
       | EEffectWithoutArguments name ->
+        let* _ = find_effect env name in
         let v = veffect_without_arguments name in
         return (env, handlers, v)
       | ETryWith (expr, body) ->
