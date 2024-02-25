@@ -4,7 +4,7 @@
 
 open Ast
 open Values
-open Errorsi
+open Int_errors
 
 module type MONAD_ERROR = sig
   type ('a, 'e) t

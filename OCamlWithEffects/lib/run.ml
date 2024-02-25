@@ -1,15 +1,15 @@
-(** Copyright 2021-2023, DmitryPilyuk and raf-nr *)
+(** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Parser
-open Pprint
-open Pprinti
-open Pprintp
-open Inferencer
-open Interpreter
-open Errorsp
 open Auxiliary
+open Parser
+open Parser_errors
+open Parser_pprint
+open Inferencer
+open Inf_pprint
+open Interpreter
+open Int_pprint
 
 let inference_program ast =
   let typ = 

@@ -2,10 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Typedtree
 open Ast
-open Errors
+open Typedtree
 open Auxiliary
+open Inf_errors
 
 module R : sig
   type 'a t

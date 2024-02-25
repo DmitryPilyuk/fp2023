@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Errorsp
+open Parser_errors
 
 let pp_error ppf error =
   match error with

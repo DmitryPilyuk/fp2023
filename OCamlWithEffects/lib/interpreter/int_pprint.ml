@@ -4,7 +4,7 @@
 
 open Values
 open Typedtree
-open Pprint
+open Inf_pprint
 
 let pp_value ppf typ =
   let rec helper ppf = function
