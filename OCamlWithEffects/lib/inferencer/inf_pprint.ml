@@ -63,7 +63,7 @@ let pp_error ppf error =
       Format.fprintf ppf "Unbound effect '%s'" name
   | `Several_bounds name ->
       Format.fprintf ppf "Variable '%s' is bound several times" name
-  | `Not_effect_in_handler -> Format.fprintf ppf "Left side of effect handler can only contain an effect with continue."
+  | `Not_effect_in_handler -> Format.fprintf ppf "Left side of effect handler can only contain an effect with continue point."
   | `Wrong_effect_typ (name, typ) ->
     let expected_typ = 
       (match typ with
@@ -76,9 +76,10 @@ let pp_error ppf error =
       name
       pp_type typ
       pp_type expected_typ
-  | `Not_effect_with_args name -> Format.fprintf ppf "Effect %s cannot take arguments - it is an effect without arguments." name
+  | `Not_effect_with_args name -> Format.fprintf ppf "Effect '%s' cannot take arguments - it is an effect without arguments." name
+  | `Not_effect_without_args name -> Format.fprintf ppf "Effect '%s' is an effect that takes an argument, but it's presented without an argument in the handler." name
   | `Perform_with_no_effect -> Format.fprintf ppf "The type of the argument passed to perform must be the effect typ."
-  | `Not_continue_val name -> Format.fprintf ppf "Variable %s is not continue variable. " name
+  | `Not_continue_val name -> Format.fprintf ppf "Variable '%s' is not continue variable. " name
   | `Handler_without_continue -> Format.fprintf ppf "The effect handler does not contain a continuation."
 ;;
 

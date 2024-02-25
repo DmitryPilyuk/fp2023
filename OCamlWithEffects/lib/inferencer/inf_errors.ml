@@ -15,6 +15,7 @@ type error =
   | `Not_effect_in_handler
   | `Wrong_effect_typ of id * typ
   | `Not_effect_with_args of id
+  | `Not_effect_without_args of id
   | `Perform_with_no_effect
   | `Not_continue_val of id
   | `Handler_without_continue
@@ -31,8 +32,8 @@ let several_bounds name = `Several_bounds name
 let not_effect_in_handler = `Not_effect_in_handler
 let wrong_effect_type name typ = `Wrong_effect_typ (name, typ)
 let not_effect_with_args name = `Not_effect_with_args name
+let not_effect_without_args name = `Not_effect_without_args name
 let perform_with_no_effect = `Perform_with_no_effect
 let not_continue_val name = `Not_continue_val name
 let handler_without_continue = `Handler_without_continue
-
 (* ---------------- *)

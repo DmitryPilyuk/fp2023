@@ -653,21 +653,39 @@ let infer_expr =
         return (sub, ty)
       | _ -> fail perform_with_no_effect)
       
-  and infer_handler env = function
+  and infer_handler env handler =
     (* Check that the effect handler is defined correctly. 
      If everything is correct, it returns the continuation type. *)
+
+    let handler_helper env name expr cont =
+      (match cont with
+      | Continue k ->
+        let schm = Scheme (TVarSet.empty, tcontinue_point) in
+        let env' = TypeEnv.extend env k schm in
+        let* env'', typ = helper env' expr in
+        return (env'', typ))
+    in
+    (match handler with
     | EffectHandler (pat, expr, cont) ->
       (match pat with
-      | (PEffectWithArguments (name, _)) | (PEffectWithoutArguments name) ->
-        let* _ = lookup_env env name in (* Check effect is defined. *)
-        let* _ = infer_pattern env pat in (* Check the pattern effect for several bound. *)
-        (match cont with
-        | Continue k ->
-          let schm = Scheme (TVarSet.empty, tcontinue_point) in
-          let env' = TypeEnv.extend env k schm in
-          let* env'', typ = helper env' expr in
-          return (env'', typ))
-      | _ -> fail not_effect_in_handler)
+      | PEffectWithArguments (name, pat_n) ->
+        let* sub1, ty1 = lookup_env env name in
+        let* ty2, _ = infer_pattern env pat_n in
+        (match ty1 with
+        | TArr (arg_ty, eff) ->
+          let* sub3 = Subst.unify arg_ty ty2 in
+          let* sub = Subst.compose_all [ sub1; sub3 ] in
+          let* _ = infer_pattern env pat in (* Check the pattern effect for several bound. *)
+          handler_helper env name expr cont
+        | _ -> fail (not_effect_with_args name))
+      | PEffectWithoutArguments name ->
+        let* _, ty = lookup_env env name in
+        (match ty with
+        | TEffect _ ->
+          let* _ = infer_pattern env pat in (* Check the pattern effect for several bound. *)
+          handler_helper env name expr cont
+        | _ -> fail (not_effect_without_args name))
+      | _ -> fail not_effect_in_handler))
   in
   helper
 ;;

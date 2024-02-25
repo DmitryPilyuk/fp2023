@@ -133,7 +133,7 @@ module Pattern (M : MONAD_ERROR) = struct
            (match flag with
             | Successful -> return (Successful, new_env)
             | UnSuccessful -> return (UnSuccessful, env)))
-      | _ -> fail type_error
+      | _ -> fail non_existen_operation
       (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
     in
     helper
