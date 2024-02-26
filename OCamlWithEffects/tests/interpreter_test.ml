@@ -95,3 +95,30 @@ let res = try sum_up test_l with
     val test_l : char list = ['1'; 'a'; '0'; '1'; '5'; '7'; 'v'; '2'; '9']
     val res : int = 25 |}]
 ;;
+
+let%expect_test _ =
+interpret
+  {|
+    let g x = if x = 0 || x = 1 then true else false ;;
+
+    let f x =
+      let rec helper x =
+        match x with
+        | [] -> true
+        | hd :: tl ->
+          (g hd) && helper tl
+      in
+      helper x
+    ;;
+
+    let res1 = f [ 1 ; 1 ; 0 ; 1 ; 1 ; 0 ; 1 ; 1 ; 0 ; 0 ; 1 ]
+    let res2 = f [ 1 ; 0 ; 1 ; 3 ; 0 ; 1 ; 1 ]
+    let res3 = f []
+  |};
+  [%expect {|
+    val g : int -> bool = <fun>
+    val f : int list -> bool = <fun>
+    val res1 : bool = true
+    val res2 : bool = false
+    val res3 : bool = true |}]
+  ;;

@@ -124,3 +124,8 @@ let interpret1 program =
   in
   res
 ;;
+
+let parse code = 
+  (match parse code with
+  | Ok ast -> print_parser_result ast
+  | Error _ -> print_parser_error syntax_error)
