@@ -82,8 +82,6 @@ module Pattern (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
-
   let rec eval_pattern pat v =
     let env = empty in
     let helper =
@@ -91,7 +89,7 @@ module Pattern (M : MONAD_ERROR) = struct
       | PAny, _ -> return (Successful, env)
       | PConst i, v -> eval_const_pattern env i v
       | PNill, VList [] -> return (Successful, env)
-      | PNill, _ -> return (UnSuccessful, env)
+      | PNill, VList _ -> return (UnSuccessful, env)
       | PVal name, v ->
         let new_env = extend env name v in
         return (Successful, new_env)
@@ -113,14 +111,11 @@ module Pattern (M : MONAD_ERROR) = struct
       | PListCons (pat1, pat2), VList (v1 :: v2) ->
         let* flag1, pat_env1 = eval_pattern pat1 v1 in
         let* flag2, pat_env2 = eval_pattern pat2 (VList v2) in
-        let* env' =
-          match flag1, flag2 with
-          | Successful, Successful ->
-            let combined_env = compose pat_env1 pat_env2 in
-            return combined_env
-          | _ -> fail type_error (* Возможно, стоит вернуть другую ошибку*)
-        in
-        return (Successful, env')
+        (match flag1, flag2 with
+        | Successful, Successful ->
+          let combined_env = compose pat_env1 pat_env2 in
+          return (Successful, combined_env)
+        | _ -> return (UnSuccessful, env))
       | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
         (match name1 = name2 with
          | true -> return (Successful, env)
@@ -133,8 +128,7 @@ module Pattern (M : MONAD_ERROR) = struct
            (match flag with
             | Successful -> return (Successful, new_env)
             | UnSuccessful -> return (UnSuccessful, env)))
-      | _ -> fail non_existen_operation
-      (* ВОЗМОЖНО ИЗМЕНИТЬ НА ОШИБКУ МЭТЧА *)
+      | _ -> fail type_error
     in
     helper
   ;;
@@ -328,7 +322,7 @@ module Interpreter (M : MONAD_ERROR) = struct
                    return (extend_handler handlers name (pat, expr, cont))
                in
                trywith_helper handlers tl
-             | _ -> fail type_error)
+             | _ -> fail type_error) (* вроде unreachable *)
           (* в try_with могут быть только handler *)
         in
         let* handlers = trywith_helper handlers body in
@@ -339,15 +333,13 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* cont =
           match cont with
           | Continue k -> return k
-          | _ -> fail `Type_error
+          | _ -> fail type_error (* вроде unreachable *)
         in
-        (* !!! *)
         let res =
           match find env cont with
           | Some (VEffectContinue (Continue n)) when n = cont ->
             return (env, vthrowing_value v)
-          | _ -> fail `Type_error
-          (* ДРУГУЮ ОШИБКУ КИДАТЬ *)
+          | _ -> fail (not_continue_var cont)
         in
         res
       | EEffectPerform expr ->
@@ -380,7 +372,7 @@ module Interpreter (M : MONAD_ERROR) = struct
       | EMatchWith (expr, cases) ->
         let* _, v = helper env handlers expr in
         let rec match_cases env = function
-          | [] -> fail type_error (* Исправить потом на другую ошибку *)
+          | [] -> fail pattern_matching_failure (* Исправить потом на другую ошибку *)
           | (pat, expr) :: rest ->
             let* flag, env' = eval_pattern pat v in
             (match flag with

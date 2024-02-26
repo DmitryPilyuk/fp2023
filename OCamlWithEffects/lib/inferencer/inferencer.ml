@@ -657,7 +657,7 @@ let infer_expr =
     (* Check that the effect handler is defined correctly. 
      If everything is correct, it returns the continuation type. *)
 
-    let handler_helper env name expr cont =
+    let handler_type env name expr cont =
       (match cont with
       | Continue k ->
         let schm = Scheme (TVarSet.empty, tcontinue_point) in
@@ -676,14 +676,14 @@ let infer_expr =
           let* sub3 = Subst.unify arg_ty ty2 in
           let* sub = Subst.compose_all [ sub1; sub3 ] in
           let* _ = infer_pattern env pat in (* Check the pattern effect for several bound. *)
-          handler_helper env name expr cont
+          handler_type env name expr cont
         | _ -> fail (not_effect_with_args name))
       | PEffectWithoutArguments name ->
         let* _, ty = lookup_env env name in
         (match ty with
         | TEffect _ ->
           let* _ = infer_pattern env pat in (* Check the pattern effect for several bound. *)
-          handler_helper env name expr cont
+          handler_type env name expr cont
         | _ -> fail (not_effect_without_args name))
       | _ -> fail not_effect_in_handler))
   in
