@@ -5,7 +5,8 @@
 open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
-parse_with_print {|
+  parse_with_print
+    {|
   let f x = 
     match x with 
     | 0 -> "zero"
@@ -24,8 +25,9 @@ parse_with_print {|
       ] |}]
 ;;
 
-(* let%expect_test _ =
-parse_with_print {|
+let%expect_test _ =
+  parse_with_print
+    {|
   let f x = 
     (match x with 
     | [] -> 0
@@ -49,4 +51,4 @@ parse_with_print {|
            )),
         None))
       ] |}]
-;; *)
+;;
