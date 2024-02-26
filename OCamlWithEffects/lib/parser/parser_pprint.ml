@@ -4,11 +4,11 @@
 
 open Parser_errors
 
-let pp_error ppf error =
-  match error with
+let pp_error ppf = function
   | Syntax_error -> Format.fprintf ppf "Syntax error."
 ;;
 
 let print_parser_error e =
   let error_str = Format.asprintf "%a" pp_error e in
   Format.printf "%s\n" error_str
+;;

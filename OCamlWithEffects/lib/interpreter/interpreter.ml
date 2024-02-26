@@ -112,10 +112,10 @@ module Pattern (M : MONAD_ERROR) = struct
         let* flag1, pat_env1 = eval_pattern pat1 v1 in
         let* flag2, pat_env2 = eval_pattern pat2 (VList v2) in
         (match flag1, flag2 with
-        | Successful, Successful ->
-          let combined_env = compose pat_env1 pat_env2 in
-          return (Successful, combined_env)
-        | _ -> return (UnSuccessful, env))
+         | Successful, Successful ->
+           let combined_env = compose pat_env1 pat_env2 in
+           return (Successful, combined_env)
+         | _ -> return (UnSuccessful, env))
       | PListCons _, VList _ -> return (UnSuccessful, env)
       | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
         (match name1 = name2 with
@@ -309,8 +309,7 @@ module Interpreter (M : MONAD_ERROR) = struct
         let v = veffect_without_arguments name in
         return (env, v)
       | ETryWith (expr, body) ->
-        let rec trywith_helper handlers body =
-          match body with
+        let rec trywith_helper handlers = function
           | [] -> return handlers
           | hd :: tl ->
             (match hd with
@@ -323,7 +322,8 @@ module Interpreter (M : MONAD_ERROR) = struct
                    return (extend_handler handlers name (pat, expr, cont))
                in
                trywith_helper handlers tl
-             | _ -> fail type_error) (* вроде unreachable *)
+             | _ -> fail type_error)
+          (* вроде unreachable *)
           (* в try_with могут быть только handler *)
         in
         let* handlers = trywith_helper handlers body in

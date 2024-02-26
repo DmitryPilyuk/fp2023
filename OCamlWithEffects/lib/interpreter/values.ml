@@ -17,7 +17,8 @@ type value =
   | VEffectDeclaration of id (* effect DevisionByZero : int -> int effect *)
   | VEffectWithArguments of id * value (* DevisionByZero x *)
   | VEffectWithoutArguments of id (* DevisionByZero *)
-  | VEffectContinue of continue_val (* continue k 0 - here k is the continuation variable *)
+  | VEffectContinue of
+      continue_val (* continue k 0 - here k is the continuation variable *)
   | VThrowingValue of value (* continue k 0 - here 0 is the throwing value *)
 
 (* The environment contains the values ​​of let bindings and declared effects. *)
@@ -25,7 +26,8 @@ type value =
 and enviroment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 (* Handlers contain effect handlers for effects that may occur in a given trywith block. *)
-and handlers = (string, (pattern * expr * continue_val), Base.String.comparator_witness) Base.Map.t
+and handlers =
+  (string, pattern * expr * continue_val, Base.String.comparator_witness) Base.Map.t
 
 (* Constructors for values *)
 

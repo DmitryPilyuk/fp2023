@@ -23,9 +23,10 @@ type typ =
   | TContinuation of typ * typ (* expression 'continue k x' type is continuation *)
 
 module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables. *)
-module VarSet = Stdlib.Set.Make (String) (* Set, that storing variables (let-binds and effect declarations). *)
+module VarSet = Stdlib.Set.Make (String)
+(* Set, that storing variables (let-binds and effect declarations). *)
 
-(* A schema of a type, 
+(* A schema of a type,
    consisting of a set of variables qualified for that type
    and the type itself *)
 type scheme = Scheme of TVarSet.t * typ

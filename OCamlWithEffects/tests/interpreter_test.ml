@@ -87,7 +87,8 @@ let test_l = ['1'; 'a'; '0'; '1'; '5'; '7'; 'v'; '2'; '9']
 let res = try sum_up test_l with
 | (NotDigit x) k -> continue k 0
 |};
-  [%expect {|
+  [%expect
+    {|
     val NotDigit : char -> int effect = <effect>
     val int_of_char : char -> int = <fun>
     val sum_up : char list -> int = <fun>

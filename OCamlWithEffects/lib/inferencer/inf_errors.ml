@@ -6,7 +6,8 @@ open Ast
 open Typedtree
 
 type error =
-  [ `Occurs_check (* Trying to unify two types when one of the types contains the other type as a subtype or variable. *)
+  [ `Occurs_check
+    (* Trying to unify two types when one of the types contains the other type as a subtype or variable. *)
   | `Unification_failed of typ * typ (* Castable types are not compatible. *)
   | `Unbound_variable of id (* An undeclared variable is used. *)
   | `Unbound_effect of id (* An undeclared effect is used. *)

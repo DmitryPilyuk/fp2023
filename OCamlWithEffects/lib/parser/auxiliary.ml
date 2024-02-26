@@ -8,7 +8,8 @@ open Angstrom
 (* Determinant of the type of a steamed expression *)
 
 type ast_type =
-  | DeclarationList (* [EDeclaration(...), ERecDeclaration(...), EFfectDeclaration(...)] *)
+  | DeclarationList
+    (* [EDeclaration(...), ERecDeclaration(...), EFfectDeclaration(...)] *)
   | MixedList (* [EDeclaration(...), EBinaryOperation(...)]*)
   | FreeExpression (* UnaryOperation(...) *)
 
@@ -18,15 +19,16 @@ let determine_ast_type ast =
   match ast with
   | [ expr ] ->
     (match expr with
-     | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ -> DeclarationList
+     | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ ->
+       DeclarationList
      | _ -> FreeExpression)
   | _ ->
-    let rec helper ast =
-      match ast with
+    let rec helper = function
       | [] -> DeclarationList
       | hd :: tl ->
         (match hd with
-         | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ -> helper tl
+         | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _
+           -> helper tl
          | _ -> MixedList)
     in
     helper ast
@@ -149,7 +151,11 @@ let eidentifier x = EIdentifier x
 let eapplication f x = EApplication (f, x)
 let efun var expression = EFun (var, expression)
 let edeclaration func_name expression exp_in = EDeclaration (func_name, expression, exp_in)
-let erec_declaration func_name expression exp_in = ERecDeclaration (func_name, expression, exp_in)
+
+let erec_declaration func_name expression exp_in =
+  ERecDeclaration (func_name, expression, exp_in)
+;;
+
 let eif_then_else condition true_b false_b = EIfThenElse (condition, true_b, false_b)
 let ematch_with expression cases = EMatchWith (expression, cases)
 let etry_with expression handlers = ETryWith (expression, handlers)

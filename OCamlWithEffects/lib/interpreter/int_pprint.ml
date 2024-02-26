@@ -33,8 +33,7 @@ let pp_value ppf typ =
   helper ppf typ
 ;;
 
-let pp_error ppf error =
-  match error with
+let pp_error ppf = function
   | `Division_by_zero -> Format.fprintf ppf "Error: division by zero."
   | `Unbound_variable name -> Format.fprintf ppf "Error: unbound variable '%s'." name
   | `Unbound_effect name -> Format.fprintf ppf "Error: unbound effect '%s'." name
@@ -52,8 +51,10 @@ let pp_error ppf error =
       ppf
       "The handler for effect '%s' does not contain the expressions needed to continue."
       name
-  | `Not_continue_var name -> Format.fprintf ppf "Variable '%s' isn't continue variable." name
-  | `Pattern_matching_failure -> Format.fprintf ppf "Pattern matching failure: the value does not match any pattern."
+  | `Not_continue_var name ->
+    Format.fprintf ppf "Variable '%s' isn't continue variable." name
+  | `Pattern_matching_failure ->
+    Format.fprintf ppf "Pattern matching failure: the value does not match any pattern."
 ;;
 
 let print_interpreter_error e =

@@ -14,7 +14,7 @@ type error =
   | `Non_existen_type
   | `Type_error
   | `Handler_without_continue of id
-  | `Not_continue_var of id 
+  | `Not_continue_var of id
   ]
 
 (* Constructors for types *)
