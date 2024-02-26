@@ -601,22 +601,17 @@ let infer_expr =
       in
       RList.fold_left cases ~init:(return (sub1, fv)) ~f
     | ETryWith (expr, body) ->
-      (* Checks that all effect handlers are defined correctly
-         and returns the expression type. *)
       let* sub, typ = helper env expr in
-      let* res =
-        RList.fold_left body ~init:(return true) ~f:(fun acc handler ->
-          let acc = acc in
-          let* _, typ = infer_handler env handler in
-          match typ with
-          | TContinuation _ -> return (true && acc)
-          | _ -> return (false && acc)
-          (* If at least one handler does not contain a continuation,
-             the try with block is considered incorrect. *))
+      let* result =
+        RList.fold_left body ~init:(return []) ~f:(fun acc handler ->
+          let* _, handler_typ = infer_handler env handler in
+          match handler_typ with
+          | TContinuation _ -> return acc
+          | _ -> return [handler])
       in
-      (match res with
-       | true -> return (sub, typ)
-       | false -> fail handler_without_continue)
+      (match result with
+      | [] -> return (sub, typ)
+      | _ -> fail handler_without_continue)
     | EEffectContinue (cont, expr) ->
       (match cont with
        | Continue k ->
