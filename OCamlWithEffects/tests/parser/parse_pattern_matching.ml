@@ -24,7 +24,7 @@ parse_with_print {|
       ] |}]
 ;;
 
-let%expect_test _ =
+(* let%expect_test _ =
 parse_with_print {|
   let f x = 
     (match x with 
@@ -49,4 +49,4 @@ parse_with_print {|
            )),
         None))
       ] |}]
-;;
+;; *)

@@ -15,7 +15,7 @@ parse_with_print {| let x = [20; 24; 5] |};
       ] |}]
 ;;
 
-(* *)
+(* ---------------- *)
 
 (* List construction *)
 
@@ -30,7 +30,7 @@ parse_with_print {| let x = 1 :: 2 :: [] |};
       ] |}]
 ;;
 
-(* *)
+(* ---------------- *)
 
 (* Tuple *)
 
@@ -53,4 +53,4 @@ parse_with_print {| let x = 1,2 |};
     [(EDeclaration ("x", (ETuple [(EConst (Int 1)); (EConst (Int 2))]), None))] |}]
 ;; *)
 
-(* *)
+(* ---------------- *)
