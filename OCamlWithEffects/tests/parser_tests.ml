@@ -264,33 +264,51 @@ let%expect_test _ =
 
 let%expect_test _ =
   print_parse_result
-    {| effect E: string -> int effect;;
+    {| effect NotDigit: char -> int effect
 
-let binary_int_of_str n = match n with
-| "0" -> 0
-| "1" -> 1 
-| s -> perform (E s)
-;;
+    let int_of_char c = match c with
+    | '0' -> 0
+    | '1' -> 1 
+    | '2' -> 2
+    | '3' -> 3
+    | '4' -> 4
+    | '5' -> 5
+    | '6' -> 6
+    | '7' -> 7
+    | '8' -> 8
+    | '9' -> 9
+    | c -> perform (NotDigit c)
+    
 
 let rec sum_up li = match li with
 | [] -> 0
-| s :: ss -> binary_int_of_str s + sum_up ss
-;;
+| h :: tl -> int_of_char h + sum_up tl
 
-let test_l = ["1"; "a"; "0"; "1"];;
+
+let test_l = ['1'; 'a'; '0'; '1'; '5'; '7'; 'v'; '2'; '9']
+
 let res = try sum_up test_l with
-| (E x) k -> continue k 0
-;;|};
+| (NotDigit x) k -> continue k 0
+|};
   [%expect
     {|
-    [(EEffectDeclaration ("E", (AArrow (AString, (AEffect AInt)))));
-      (EDeclaration ("binary_int_of_str",
-         (EFun ((PVal "n"),
-            (EMatchWith ((EIdentifier "n"),
-               [((PConst (String "0")), (EConst (Int 0)));
-                 ((PConst (String "1")), (EConst (Int 1)));
-                 ((PVal "s"),
-                  (EEffectPerform (EEffectWithArguments ("E", (EIdentifier "s")))))
+    [(EEffectDeclaration ("NotDigit", (AArrow (AChar, (AEffect AInt)))));
+      (EDeclaration ("int_of_char",
+         (EFun ((PVal "c"),
+            (EMatchWith ((EIdentifier "c"),
+               [((PConst (Char '0')), (EConst (Int 0)));
+                 ((PConst (Char '1')), (EConst (Int 1)));
+                 ((PConst (Char '2')), (EConst (Int 2)));
+                 ((PConst (Char '3')), (EConst (Int 3)));
+                 ((PConst (Char '4')), (EConst (Int 4)));
+                 ((PConst (Char '5')), (EConst (Int 5)));
+                 ((PConst (Char '6')), (EConst (Int 6)));
+                 ((PConst (Char '7')), (EConst (Int 7)));
+                 ((PConst (Char '8')), (EConst (Int 8)));
+                 ((PConst (Char '9')), (EConst (Int 9)));
+                 ((PVal "c"),
+                  (EEffectPerform
+                     (EEffectWithArguments ("NotDigit", (EIdentifier "c")))))
                  ]
                ))
             )),
@@ -299,11 +317,11 @@ let res = try sum_up test_l with
          (EFun ((PVal "li"),
             (EMatchWith ((EIdentifier "li"),
                [(PNill, (EConst (Int 0)));
-                 ((PListCons ((PVal "s"), (PVal "ss"))),
+                 ((PListCons ((PVal "h"), (PVal "tl"))),
                   (EBinaryOperation (Add,
-                     (EApplication ((EIdentifier "binary_int_of_str"),
-                        (EIdentifier "s"))),
-                     (EApplication ((EIdentifier "sum_up"), (EIdentifier "ss")))
+                     (EApplication ((EIdentifier "int_of_char"),
+                        (EIdentifier "h"))),
+                     (EApplication ((EIdentifier "sum_up"), (EIdentifier "tl")))
                      )))
                  ]
                ))
@@ -311,13 +329,14 @@ let res = try sum_up test_l with
          None));
       (EDeclaration ("test_l",
          (EList
-            [(EConst (String "1")); (EConst (String "a")); (EConst (String "0"));
-              (EConst (String "1"))]),
+            [(EConst (Char '1')); (EConst (Char 'a')); (EConst (Char '0'));
+              (EConst (Char '1')); (EConst (Char '5')); (EConst (Char '7'));
+              (EConst (Char 'v')); (EConst (Char '2')); (EConst (Char '9'))]),
          None));
       (EDeclaration ("res",
          (ETryWith (
             (EApplication ((EIdentifier "sum_up"), (EIdentifier "test_l"))),
-            [(EffectHandler ((PEffectWithArguments ("E", (PVal "x"))),
+            [(EffectHandler ((PEffectWithArguments ("NotDigit", (PVal "x"))),
                 (EEffectContinue ((Continue "k"), (EConst (Int 0)))),
                 (Continue "k")))
               ]
