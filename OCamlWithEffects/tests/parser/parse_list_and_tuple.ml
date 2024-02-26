@@ -7,7 +7,7 @@ open Ocaml_with_effects_lib.Run
 (* List *)
 
 let%expect_test _ =
-parse_with_print {| let x = [20; 24; 5] |};
+  parse_with_print {| let x = [20; 24; 5] |};
   [%expect
     {|
     [(EDeclaration ("x",
@@ -20,7 +20,7 @@ parse_with_print {| let x = [20; 24; 5] |};
 (* List construction *)
 
 let%expect_test _ =
-parse_with_print {| let x = 1 :: 2 :: [] |};
+  parse_with_print {| let x = 1 :: 2 :: [] |};
   [%expect
     {|
     [(EDeclaration ("x",
@@ -35,7 +35,7 @@ parse_with_print {| let x = 1 :: 2 :: [] |};
 (* Tuple *)
 
 let%expect_test _ =
-parse_with_print {| let x = (1, 2, 3, 4) |};
+  parse_with_print {| let x = (1, 2, 3, 4) |};
   [%expect
     {|
     [(EDeclaration ("x",

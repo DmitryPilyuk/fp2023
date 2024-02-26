@@ -668,9 +668,10 @@ let parse_match_with pack =
   let parse_case =
     lift2 (fun pat expr -> pat, expr) (trait *> parse_pattern) (arrow *> parse_expr)
   in
-  skip_wspace
-  *> string "match"
-  *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
+  parens self
+  <|> skip_wspace
+      *> string "match"
+      *> lift2 ematch_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
 ;;
 
 let parse_let_in pack =
