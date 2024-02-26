@@ -116,6 +116,7 @@ module Pattern (M : MONAD_ERROR) = struct
           let combined_env = compose pat_env1 pat_env2 in
           return (Successful, combined_env)
         | _ -> return (UnSuccessful, env))
+      | PListCons _, VList _ -> return (UnSuccessful, env)
       | PEffectWithoutArguments name1, VEffectWithoutArguments name2 ->
         (match name1 = name2 with
          | true -> return (Successful, env)
