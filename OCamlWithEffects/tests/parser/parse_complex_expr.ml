@@ -7,7 +7,7 @@ open Ocaml_with_effects_lib.Run
 (* Factorial *)
 
 let%expect_test _ =
-  parse {| let rec fact n = if n = 1 then 1 else n * fact (n - 1) |};
+  parse_with_print {| let rec fact n = if n = 1 then 1 else n * fact (n - 1) |};
   [%expect
     {|
     [(ERecDeclaration ("fact",
@@ -31,7 +31,7 @@ let%expect_test _ =
 (* Safe division by zero. *)
 
 let%expect_test _ =
-parse
+parse_with_print
     {|
    effect DevisionByZero : int effect
 
@@ -86,7 +86,7 @@ parse
 (* Calculating the sum of a list of numbers represented by symbols using effects. *)
 
 let%expect_test _ =
-parse
+parse_with_print
     {| effect NotDigit: char -> int effect
 
     let int_of_char c = match c with

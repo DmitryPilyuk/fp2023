@@ -5,7 +5,7 @@
 open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
-parse
+parse_with_print
     {|
     effect E1 : int -> int effect
     effect E2 : int -> int effect

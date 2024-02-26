@@ -7,13 +7,13 @@ open Ocaml_with_effects_lib.Run
 (* Let *)
 
 let%expect_test _ =
-   parse {| let x = (1) |};
+   parse_with_print {| let x = (1) |};
   [%expect {|
     [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
 ;;
 
 let%expect_test _ =
-parse {| let f x y = x + y 
+parse_with_print {| let f x y = x + y 
 let main = f 4 6|};
   [%expect
     {|
@@ -35,7 +35,7 @@ let main = f 4 6|};
 (* Let Rec *)
 
 let%expect_test _ =
-parse {| let rec f x = f (x - 1)|};
+parse_with_print {| let rec f x = f (x - 1)|};
   [%expect
     {|
     [(ERecDeclaration ("f",
@@ -52,7 +52,7 @@ parse {| let rec f x = f (x - 1)|};
 (* Let/Let Rec with IN *)
 
 let%expect_test _ =
-parse {| let f = 
+parse_with_print{| let f = 
     let x = 5 in
     1 + x * 3
   |};

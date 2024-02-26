@@ -7,7 +7,7 @@ open Ocaml_with_effects_lib.Run
 (* Bynary operatios *)
 
 let%expect_test _ =
-  parse {| 1 + 5 * 3 |};
+  parse_with_print {| 1 + 5 * 3 |};
   [%expect
     {|
     [(EBinaryOperation (Add, (EConst (Int 1)),
@@ -16,7 +16,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse {| 1 * (+5) / (-3) |};
+  parse_with_print {| 1 * (+5) / (-3) |};
   [%expect
     {|
     [(EBinaryOperation (Div,
@@ -31,7 +31,7 @@ let%expect_test _ =
 (* If Then Else *)
 
 let%expect_test _ =
-  parse {| if false || true && not false then "Yes" else "No" |};
+  parse_with_print {| if false || true && not false then "Yes" else "No" |};
   [%expect
     {|
     [(EIfThenElse (

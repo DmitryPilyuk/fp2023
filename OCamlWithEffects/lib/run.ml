@@ -11,6 +11,11 @@ open Inf_pprint
 open Interpreter
 open Int_pprint
 
+let parse_with_print code = 
+  (match parse code with
+  | Ok ast -> print_parser_result ast
+  | Error _ -> print_parser_error syntax_error)
+
 let inference_program ast =
   let typ =
     match run_program_inferencer ast with
@@ -124,8 +129,3 @@ let interpret1 program =
   in
   res
 ;;
-
-let parse code = 
-  (match parse code with
-  | Ok ast -> print_parser_result ast
-  | Error _ -> print_parser_error syntax_error)
