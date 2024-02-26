@@ -75,18 +75,5 @@ let print_program_value val_env typ_env names_list =
     match typ, value with
     | Some (Scheme (_, typ)), Some value ->
       Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
-    | _, _ -> Printf.printf "")
+    | _, _ -> Printf.printf "") (* Unreachable *)
 ;;
-
-(* Unreacheable *)
-
-let print_expr_value1 name value = Format.printf "%s = %s \n" name (value_to_string value)
-
-let print_program_value1 names_list val_env =
-  Base.List.iter names_list ~f:(fun name ->
-    let value = Base.Map.find val_env name in
-    match value with
-    | Some value -> Format.printf "%s = %s\n" name (value_to_string value)
-    | _ -> Printf.printf "")
-;;
-(* Unreacheable *)

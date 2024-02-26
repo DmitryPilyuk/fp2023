@@ -93,39 +93,3 @@ let interpret program =
   in
   res
 ;;
-
-let interpret_program1 ast =
-  let res =
-    match run_program_interpreter ast with
-    | Ok val_env -> print_program_value1 [ "f"; "res"; "g"; "z"; "E" ] val_env
-    | Error e -> print_interpreter_error e
-  in
-  res
-;;
-
-let interpret_expr1 ast =
-  let res =
-    match run_expr_interpreter ast with
-    | Ok value -> print_expr_value1 "a" value
-    | Error e -> print_interpreter_error e
-  in
-  res
-;;
-
-let interpret1 program =
-  let ast = parse program in
-  let res =
-    match ast with
-    | Ok ast ->
-      (match determine_ast_type ast with
-       | FreeExpression ->
-         (match ast with
-          | [ x ] -> interpret_expr1 x
-          | _ -> print_parser_error syntax_error)
-         (* Unreachable *)
-       | DeclarationList -> interpret_program1 ast
-       | MixedList -> print_parser_error syntax_error)
-    | Error _ -> print_parser_error syntax_error
-  in
-  res
-;;
