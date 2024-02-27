@@ -72,15 +72,39 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {| "name1" < "name2" && "name2" > "name1" |};
+  interpret {| 'a' <> 'b' && 'b' != 'a' && 'a' = 'a' && 'a' >= 'a' && 'a' <= 'b' |};
   [%expect {|
     - : bool = true |}]
 ;;
 
 let%expect_test _ =
-  interpret {| () = () && not (() != ())|};
+  interpret {| "name1" < "name2" && "name2" > "name1" && "name1" = "name1" && "name1" <> "name2" |};
   [%expect {|
     - : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {| "name1" <= "name2" && "name2" >= "name2"|};
+  [%expect {|
+    - : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {| () = () && not (() != ()) && not (() <= () && () >= () && () < () && () > ())|};
+  [%expect {|
+    - : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {| 'a' = 'a' && 1 = 1 && "name" = "name" && true = true && false = false && () = () |};
+  [%expect {|
+    - : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {| true < true || true > true || not (true <= true && true >= true) || true = false || false <> false |};
+  [%expect {|
+    - : bool = false |}]
 ;;
 
 (* ---------------- *)

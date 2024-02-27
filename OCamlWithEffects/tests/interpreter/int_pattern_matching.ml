@@ -76,3 +76,63 @@ let%expect_test _ =
 ;;
 
 (* ---------------- *)
+
+(* Tuple pattern *)
+
+let%expect_test _ =
+  interpret
+    {|
+    let f x = 
+      match x with
+      | ((x,0), (z, 0)) -> x + z
+    ;;
+
+    let res = f ((5,0), (6, 1))
+    |};
+  [%expect {|
+    Pattern matching failure: the value does not match any pattern. |}]
+;;
+
+(* ---------------- *)
+
+(* Effect patterns *)
+
+let%expect_test _ =
+  interpret
+    {|
+    effect E : int effect
+    effect G : int effect
+    let f x = 
+      match x with
+      | E -> 0
+      | G -> 0
+    ;;
+
+    let res1 = f E
+    let res2 = f G
+    |};
+  [%expect {|
+    val E : int effect = <effect>
+    val G : int effect = <effect>
+    val f : int effect -> int = <fun>
+    val res1 : int = 0
+    val res2 : int = 0 |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {|
+    effect E : int effect
+    effect G : int effect
+    let f x = 
+      match x with
+      | G -> 0
+    ;;
+
+    let res1 = f E
+    ;;
+    |};
+  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
+;;
+
+(* ---------------- *)
