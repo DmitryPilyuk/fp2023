@@ -42,9 +42,7 @@ let inference program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> inference_expr x
-          | _ -> print_parser_error syntax_error)
-         (* Unreachable *)
+          | [ x ] -> inference_expr x)
        | DeclarationList -> inference_program ast
        | MixedList -> print_parser_error syntax_error)
     | Error _ -> print_parser_error syntax_error
@@ -84,9 +82,7 @@ let interpret program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> interpret_expr x
-          | _ -> print_parser_error syntax_error)
-         (* Unreachable *)
+          | [ x ] -> interpret_expr x)
        | DeclarationList -> interpret_program ast
        | MixedList -> print_parser_error syntax_error)
     | Error _ -> print_parser_error syntax_error
