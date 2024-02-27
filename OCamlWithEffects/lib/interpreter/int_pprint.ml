@@ -27,8 +27,8 @@ let pp_value ppf typ =
     | VRecFun _ -> Format.fprintf ppf "<fun>"
     | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ ->
       Format.fprintf ppf "<effect>"
-    | VEffectContinue k -> Format.fprintf ppf "<continue>"
-    | VThrowingValue v -> Format.fprintf ppf "value"
+    | VEffectContinue _ -> Format.fprintf ppf "<continue>"
+    | VThrowingValue _ -> Format.fprintf ppf "value"
   in
   helper ppf typ
 ;;
@@ -75,5 +75,6 @@ let print_program_value val_env typ_env names_list =
     match typ, value with
     | Some (Scheme (_, typ)), Some value ->
       Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
-    | _, _ -> Printf.printf "") (* Unreachable *)
+    | _, _ -> Printf.printf "")
 ;;
+(* Unreachable *)

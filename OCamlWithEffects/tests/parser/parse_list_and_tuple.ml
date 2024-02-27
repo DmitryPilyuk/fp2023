@@ -30,6 +30,19 @@ let%expect_test _ =
       ] |}]
 ;;
 
+let%expect_test _ =
+  parse_with_print {| let x = (1, 2) :: (3, 4) :: [] |};
+  [%expect
+    {|
+    [(EDeclaration ("x",
+        (EListCons ((ETuple [(EConst (Int 1)); (EConst (Int 2))]),
+           (EListCons ((ETuple [(EConst (Int 3)); (EConst (Int 4))]), (EList [])
+              ))
+           )),
+        None))
+      ] |}]
+;;
+
 (* ---------------- *)
 
 (* Tuple *)

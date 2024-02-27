@@ -607,11 +607,11 @@ let infer_expr =
           let* _, handler_typ = infer_handler env handler in
           match handler_typ with
           | TContinuation _ -> return acc
-          | _ -> return [handler])
+          | _ -> return [ handler ])
       in
       (match result with
-      | [] -> return (sub, typ)
-      | _ -> fail handler_without_continue)
+       | [] -> return (sub, typ)
+       | _ -> fail handler_without_continue)
     | EEffectContinue (cont, expr) ->
       (match cont with
        | Continue k ->

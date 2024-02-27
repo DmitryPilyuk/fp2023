@@ -369,7 +369,7 @@ let parse_list_cons pack =
   *>
   let parse_expr =
     choice
-      [ parens @@ pack.parse_tuple pack
+      [ pack.parse_tuple pack
       ; parens self
       ; parens @@ pack.parse_bin_op pack
       ; pack.parse_un_op pack
