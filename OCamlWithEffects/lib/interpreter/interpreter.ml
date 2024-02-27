@@ -388,7 +388,7 @@ module Interpreter (M : MONAD_ERROR) = struct
         let new_env = compose fun_env pat_env in
         let* _, v = helper new_env handlers exp in
         return (env, v)
-      | UnSuccessful -> fail type_error
+      | UnSuccessful -> fail pattern_matching_failure
     in
     helper
   ;;
