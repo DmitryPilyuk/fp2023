@@ -1,0 +1,9 @@
+(library
+ (name int_tests)
+ (libraries ocaml_with_effects_lib)
+ (modules Int_simple_expr)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
