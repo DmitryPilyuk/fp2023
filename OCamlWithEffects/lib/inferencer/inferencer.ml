@@ -651,14 +651,14 @@ let infer_expr =
       (match pat with
        | PEffectWithArguments (name, pat_n) ->
          let* sub1, ty1 = lookup_env env name in
-         let* ty2, _ = infer_pattern env pat_n in
+         let* ty2, env' = infer_pattern env pat_n in
          (match ty1 with
           | TArr (arg_ty, eff) ->
             let* sub3 = Subst.unify arg_ty ty2 in
             let* sub = Subst.compose_all [ sub1; sub3 ] in
             let* _ = infer_pattern env pat in
             (* Check the pattern effect for several bound. *)
-            handler_type env name expr cont
+            handler_type env' name expr cont
           | _ -> fail (not_effect_with_args name))
        | PEffectWithoutArguments name ->
          let* _, ty = lookup_env env name in
