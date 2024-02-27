@@ -16,6 +16,9 @@ module type MONAD_ERROR = sig
 end
 
 module Env (M : MONAD_ERROR) = struct
+  (* The environment is map, in which the key is string - 
+     the name of the let binding or the name of the effect,
+     and the value is the result of the interpreter ('value'). *)
   open M
 
   type t = enviroment
@@ -42,6 +45,9 @@ module Env (M : MONAD_ERROR) = struct
 end
 
 module Handlers (M : MONAD_ERROR) = struct
+  (* The handlers environment is map, where the key is string - 
+     the name of the effect, and the value is a tuple of three elements
+     - the handler of this effect. *)
   open M
 
   type t = handlers
@@ -62,8 +68,8 @@ module Pattern (M : MONAD_ERROR) = struct
   open Env (M)
 
   type match_flag =
-    | Successful
-    | UnSuccessful
+    | Successful (* The pattern is matched to the value. *)
+    | UnSuccessful (* The pattern isn't matched to the value. *)
 
   let eval_const_pattern env pat v =
     match pat, v with
@@ -78,6 +84,9 @@ module Pattern (M : MONAD_ERROR) = struct
   ;;
 
   let rec eval_pattern pat v =
+    (* The function tries to match the pattern and the value.
+       If it succeeds, it returns a tuple of the successful matching flag
+       and the environment in which the pattern was defined. *)
     let env = empty in
     let helper =
       match pat, v with
@@ -207,6 +216,7 @@ module Interpreter (M : MONAD_ERROR) = struct
   ;;
 
   let eval_handler handler v = 
+    (* Used in perform to match the handler pattern and the effect. *)
     match handler, v with
     | (p, _, _), VEffectWithoutArguments _
     | (p, _, _), VEffectWithArguments _ -> eval_pattern p v
@@ -300,7 +310,21 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* _ = find_effect env name in
         let v = veffect_without_arguments name in
         return (env, v)
+      | EMatchWith (expr, cases) ->
+        let* _, v = helper env handlers expr in
+        let rec match_cases env = function
+          | [] -> fail pattern_matching_failure
+          | (pat, expr) :: rest ->
+            let* flag, env' = eval_pattern pat v in
+            (match flag with
+              | Successful ->
+                let env'' = compose env env' in
+                let* _, result = helper env'' handlers expr in
+                return (env, result)
+              | UnSuccessful -> match_cases env rest)
       | ETryWith (expr, body) ->
+        (* Go through all the effect handlers and add them to the handler environment. *)
+        (* And then, using this environment - calculate the expr at which the effect can perform. *)
         let rec trywith_helper handlers = function
           | [] -> return handlers
           | hd :: tl ->
@@ -308,9 +332,8 @@ module Interpreter (M : MONAD_ERROR) = struct
              | EffectHandler (pat, expr, cont) ->
                let* handlers =
                  match pat with
-                 | PEffectWithoutArguments name as pat ->
-                   return (extend_handler handlers name (pat, expr, cont))
-                 | PEffectWithArguments (name, _) as pat ->
+                 | PEffectWithoutArguments name 
+                 | PEffectWithArguments (name, _) ->
                    return (extend_handler handlers name (pat, expr, cont))
                  | _ -> fail type_error
                in
@@ -326,19 +349,20 @@ module Interpreter (M : MONAD_ERROR) = struct
           | Continue k -> return k
         in
         let res =
+          (* Check that the continuation variable is defined. *)
           match find env cont with
           | Some (VEffectContinue (Continue n)) when n = cont ->
-            return (env, vthrowing_value v)
-          | _ -> fail (not_continue_var cont)
+            return (env, vthrowing_value v) (* Transfer the value. *)
+          | _ -> fail (not_continue_var cont) (* If the variable is not a continuation point. *)
         in
         res
       | EEffectPerform expr ->
-        let* _, v = helper env handlers expr in
+        let* _, v = helper env handlers expr in (* “count” the effect inside perform. *)
         (match v with
          | VEffectWithArguments (name, _) | VEffectWithoutArguments name ->
-           let* _ = find_effect env name in
-           let* handler = find_handler handlers name in
-           let* flag, pat_env  = eval_handler handler v in
+           let* _ = find_effect env name in (* Check that the effect is defined. *)
+           let* handler = find_handler handlers name in (* Check that the handler is defined. *)
+           let* flag, pat_env = eval_handler handler v in
            let _, expr, cont = handler in
             (match flag with
               | Successful ->
@@ -347,33 +371,26 @@ module Interpreter (M : MONAD_ERROR) = struct
                   match cont with
                   | Continue k -> return k
                 in
-                let new_env = extend new_env cont_val (veffect_continue cont) in
-                let* _, v = helper new_env handlers expr in
+                let new_env = extend new_env cont_val (veffect_continue cont) in (* Set a continuation “point”. *)
+                let* _, v = helper new_env handlers expr in 
                 (match v with
                 | VThrowingValue n -> return (env, n)
                 | _ -> fail (handler_without_continue name))
+                (* Here evaluate the expression in the handler (there should be continue). 
+                   If it throws a value, we return it. If something else,
+                   give an error, since ordinary exceptions are not processed. *)
               | UnSuccessful -> fail type_error)
          | _ -> fail type_error)
-      | EMatchWith (expr, cases) ->
-        let* _, v = helper env handlers expr in
-        let rec match_cases env = function
-          | [] -> fail pattern_matching_failure
-          | (pat, expr) :: rest ->
-            let* flag, env' = eval_pattern pat v in
-            (match flag with
-             | Successful ->
-               let env'' = compose env env' in
-               let* _, result = helper env'' handlers expr in
-               return (env, result)
-             | UnSuccessful -> match_cases env rest)
         in
         match_cases env cases
+
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
         let* env, value = helper env empty_handler expr in
         let* env, rest_values = list_and_tuple_helper env rest in
         return (env, value :: rest_values)
+
     and rec_declaration_helper env handlers name expr =
       let* env, v = helper env handlers expr in
       let res =
@@ -383,6 +400,7 @@ module Interpreter (M : MONAD_ERROR) = struct
       in
       let new_env = extend env name res in
       return (new_env, res)
+
     and application_helper flag fun_env pat_env env handlers exp =
       match flag with
       | Successful ->
@@ -400,6 +418,8 @@ module Interpreter (M : MONAD_ERROR) = struct
   ;;
 
   let interpret_program program =
+    (* The result of the program is an enviroment
+       in which all let bindings and effects and their values ​​are defined. *)
     let rec run_helper env handlers = function
       | [] -> return env
       | expr :: rest ->
