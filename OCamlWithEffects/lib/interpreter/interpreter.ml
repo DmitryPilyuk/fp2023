@@ -50,11 +50,6 @@ module Handlers (M : MONAD_ERROR) = struct
   let find_handler env k = Base.Map.find env k
   let extend_handler env key value = Base.Map.update env key ~f:(fun _ -> value)
 
-  let compose_handlers env1 env2 =
-    Base.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env ->
-      extend_handler acc_env key data)
-  ;;
-
   let find_handler handlers name =
     match find_handler handlers name with
     | Some v -> return v
@@ -197,13 +192,13 @@ module Interpreter (M : MONAD_ERROR) = struct
     | Lt, VUnit, VUnit -> return (env, vbool false)
     (* >= *)
     | Gte, VInt i1, VInt i2 -> return (env, vbool (i1 >= i2))
-    | Gte, VBool _, VBool _ -> return (env, vbool false)
+    | Gte, VBool b1, VBool b2 -> return (env, vbool (b1 >= b2))
     | Gte, VChar c1, VChar c2 -> return (env, vbool (c1 >= c2))
     | Gte, VString s1, VString s2 -> return (env, vbool (s1 >= s2))
     | Gte, VUnit, VUnit -> return (env, vbool false)
     (* <= *)
     | Lte, VInt i1, VInt i2 -> return (env, vbool (i1 <= i2))
-    | Lte, VBool _, VBool _ -> return (env, vbool false)
+    | Lte, VBool b1, VBool b2 -> return (env, vbool (b1 <= b2))
     | Lte, VChar c1, VChar c2 -> return (env, vbool (c1 <= c2))
     | Lte, VString s1, VString s2 -> return (env, vbool (s1 <= s2))
     | Lte, VUnit, VUnit -> return (env, vbool false)
