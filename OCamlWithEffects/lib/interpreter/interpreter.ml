@@ -321,9 +321,7 @@ module Interpreter (M : MONAD_ERROR) = struct
                  | PEffectWithArguments (name, _) as pat ->
                    return (extend_handler handlers name (pat, expr, cont))
                in
-               trywith_helper handlers tl
-             | _ -> fail type_error)
-          (* вроде unreachable *)
+               trywith_helper handlers tl)
           (* в try_with могут быть только handler *)
         in
         let* handlers = trywith_helper handlers body in
@@ -334,7 +332,6 @@ module Interpreter (M : MONAD_ERROR) = struct
         let* cont =
           match cont with
           | Continue k -> return k
-          | _ -> fail type_error (* вроде unreachable *)
         in
         let res =
           match find env cont with
@@ -358,7 +355,6 @@ module Interpreter (M : MONAD_ERROR) = struct
                  let* cont_val =
                    match cont with
                    | Continue k -> return k
-                   | _ -> fail type_error
                  in
                  (* другая ошибка *)
                  let new_env = extend new_env cont_val (veffect_continue cont) in
