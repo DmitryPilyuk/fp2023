@@ -23,17 +23,16 @@ type error =
   ]
 
 (* Constructors for types *)
-let occurs_check = `Occurs_check
-let unification_failed ty1 ty2 = `Unification_failed (ty1, ty2)
-let unbound_variable name = `Unbound_variable name
-let unbound_effect name = `Unbound_effect name
-let not_reachable = `Not_reachable
-let several_bounds name = `Several_bounds name
-let not_effect_in_handler = `Not_effect_in_handler
-let wrong_effect_type name typ = `Wrong_effect_typ (name, typ)
-let not_effect_with_args name = `Not_effect_with_args name
-let not_effect_without_args name = `Not_effect_without_args name
-let perform_with_no_effect = `Perform_with_no_effect
-let not_continue_val name = `Not_continue_val name
-let handler_without_continue = `Handler_without_continue
-(* ---------------- *)
+val occurs_check : [> `Occurs_check ]
+val unification_failed : 'a -> 'b -> [> `Unification_failed of 'a * 'b ]
+val unbound_variable : 'a -> [> `Unbound_variable of 'a ]
+val unbound_effect : 'a -> [> `Unbound_effect of 'a ]
+val not_reachable : [> `Not_reachable ]
+val several_bounds : 'a -> [> `Several_bounds of 'a ]
+val not_effect_in_handler : [> `Not_effect_in_handler ]
+val wrong_effect_type : 'a -> 'b -> [> `Wrong_effect_typ of 'a * 'b ]
+val not_effect_with_args : 'a -> [> `Not_effect_with_args of 'a ]
+val not_effect_without_args : 'a -> [> `Not_effect_without_args of 'a ]
+val perform_with_no_effect : [> `Perform_with_no_effect ]
+val not_continue_val : 'a -> [> `Not_continue_val of 'a ]
+val handler_without_continue : [> `Handler_without_continue ]
