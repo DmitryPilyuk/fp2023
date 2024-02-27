@@ -30,10 +30,8 @@ type dispatch =
 
 let skip_wspace = skip_while is_whitespace
 let skip_wspace1 = take_while1 is_whitespace
-let is_letter c = is_upper c || is_lower c
 let parens p = skip_wspace *> char '(' *> p <* skip_wspace <* char ')'
 let sqr_parens p = skip_wspace *> char '[' *> p <* skip_wspace <* char ']'
-let braces p = skip_wspace *> char '{' *> p <* skip_wspace <* char '}'
 let list_constr = skip_wspace *> string "::"
 let arrow = skip_wspace *> string "->"
 let trait = skip_wspace *> string "|"
