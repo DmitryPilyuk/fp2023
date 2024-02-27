@@ -9,8 +9,6 @@ open Inf_pprint
 val print_interpreter_error
   :  [< `Division_by_zero
      | `Handler_without_continue of string
-     | `Non_existen_operation
-     | `Non_existen_type
      | `Not_continue_var of string
      | `Pattern_matching_failure
      | `Type_error

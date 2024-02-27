@@ -27,8 +27,8 @@ let pp_value ppf typ =
     | VRecFun _ -> Format.fprintf ppf "<fun>"
     | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ ->
       Format.fprintf ppf "<effect>"
-    | VEffectContinue _ -> Format.fprintf ppf "<continue>"
-    | VThrowingValue _ -> Format.fprintf ppf "value"
+    | VEffectContinue _ -> Format.fprintf ppf "<continue>" (* Used only for debugging and test. *)
+    | VThrowingValue _ -> Format.fprintf ppf "thorowing value" (* Used only for debugging and test. *)
   in
   helper ppf typ
 ;;
@@ -37,15 +37,13 @@ let pp_error ppf = function
   | `Division_by_zero -> Format.fprintf ppf "Error: division by zero."
   | `Unbound_variable name -> Format.fprintf ppf "Error: unbound variable '%s'." name
   | `Unbound_effect name -> Format.fprintf ppf "Error: unbound effect '%s'." name
-  | `Non_existen_operation -> Format.fprintf ppf "Non-existent operation." (* ??? *)
-  | `Non_existen_type -> Format.fprintf ppf "Non-existent type." (* ??? *)
   | `Type_error ->
     Format.fprintf ppf "Type error: please use type inference for more information."
   | `Unbound_handler id ->
     Format.fprintf
       ppf
       "Error: no suitable handler was found for effect '%s'."
-      id (* ??? *)
+      id
   | `Handler_without_continue name ->
     Format.fprintf
       ppf
@@ -75,6 +73,5 @@ let print_program_value val_env typ_env names_list =
     match typ, value with
     | Some (Scheme (_, typ)), Some value ->
       Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
-    | _, _ -> Printf.printf "")
+    | _, _ -> Printf.printf "") (* Unreachable *)
 ;;
-(* Unreachable *)
