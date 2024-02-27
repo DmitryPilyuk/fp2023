@@ -44,7 +44,7 @@ let%expect_test _ =
     {| 
       5 + 'c'
     |};
-  [%expect {| Unification failed: type char does not match expected type int |}]
+  [%expect {| Type error: unification failed - type char does not match expected type int |}]
 ;;
 
 (* ---------------- *)

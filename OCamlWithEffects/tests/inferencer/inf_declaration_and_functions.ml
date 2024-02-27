@@ -23,7 +23,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   inference {| let f = match x with | _ -> 0 |};
-  [%expect {| Unbound variable 'x' |}]
+  [%expect {| Type error: unbound variable 'x' |}]
 ;;
 
 (* ---------------- *)
@@ -37,7 +37,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   inference {| let rec f = f 4 |};
-  [%expect {| Occurs check failed. |}]
+  [%expect {| Type error: occurs check failed. |}]
 ;;
 
 (* ---------------- *)

@@ -40,7 +40,7 @@ let%expect_test _ =
     let res = f [true ; false ; true ; false ; true]
     |};
   [%expect {|
-    Unification failed: type int does not match expected type bool |}]
+    Type error: unification failed - type int does not match expected type bool |}]
 ;;
 
 let%expect_test _ =
@@ -51,7 +51,7 @@ let%expect_test _ =
     | _ -> 0
     ;;
     |};
-  [%expect {| Variable 'x' is bound several times |}]
+  [%expect {| Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
@@ -62,7 +62,7 @@ let%expect_test _ =
     | _ -> 0
     ;;
     |};
-  [%expect {| Variable 'y' is bound several times |}]
+  [%expect {| Type error: variable 'y' is bound several times |}]
 ;;
 
 (* ---------------- *)
@@ -100,7 +100,7 @@ let%expect_test _ =
     | _ -> 0
     ;;
     |};
-  [%expect {| Variable 'x' is bound several times |}]
+  [%expect {| Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
@@ -111,7 +111,7 @@ let%expect_test _ =
     | _ -> 0
     ;;
     |};
-  [%expect {| Variable 'x' is bound several times |}]
+  [%expect {| Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
@@ -148,7 +148,7 @@ let%expect_test _ =
       | _ -> 1
     |};
   [%expect {|
-    Variable 'd' is bound several times |}]
+    Type error: variable 'd' is bound several times |}]
 ;;
 
 (* ---------------- *)
@@ -183,7 +183,7 @@ let%expect_test _ =
       ;;
       |};
     [%expect {|
-      Variable 'x' is bound several times |}]
+      Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
@@ -230,7 +230,7 @@ let%expect_test _ =
     ;;
     |};
   [%expect {|
-    Unification failed: type 'c list does not match expected type int |}]
+    Type error: unification failed - type 'c list does not match expected type int |}]
 ;;
 
 let%expect_test _ =
@@ -245,7 +245,7 @@ let%expect_test _ =
       ;;
       |};
     [%expect {|
-      Variable 'x' is bound several times |}]
+      Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
@@ -276,7 +276,7 @@ let%expect_test _ =
     ;;
     |};
   [%expect {|
-    Effect 'E' cannot take arguments - it is an effect without arguments. |}]
+    Type error: effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
 
 (* let%expect_test _ =

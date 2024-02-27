@@ -61,7 +61,7 @@ let%expect_test _ =
     Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Int 2)));
   [%expect
     {|
-    Unification failed: type char does not match expected type int |}]
+    Type error: unification failed - type char does not match expected type int |}]
 ;;
 
 let%expect_test _ =
@@ -79,7 +79,7 @@ let%expect_test _ =
     Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Int 2)));
   [%expect
     {|
-    Unification failed: type char does not match expected type int |}]
+    Type error: unification failed - type char does not match expected type int |}]
 ;;
 
 let%expect_test _ =
@@ -150,7 +150,7 @@ let%expect_test _ =
     None)];
   [%expect
     {|
-    Unification failed: type int does not match expected type bool |}]
+    Type error: unification failed - type int does not match expected type bool |}]
 ;;
 
 (* Test ast determine *)

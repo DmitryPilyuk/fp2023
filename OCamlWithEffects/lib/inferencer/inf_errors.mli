@@ -13,13 +13,13 @@ type error =
   | `Unbound_effect of id (* An undeclared effect is used. *)
   | `Not_reachable (* Sections of code that will never be reached. *)
   | `Several_bounds of id (* A type variable is assigned more than one constraint. *)
-  | `Not_effect_in_handler
-  | `Wrong_effect_typ of id * typ
-  | `Not_effect_with_args of id
-  | `Not_effect_without_args of id
-  | `Perform_with_no_effect
-  | `Not_continue_val of id
-  | `Handler_without_continue
+  | `Wrong_effect_typ of id * typ (* The effect type in the ad is not an effect. *)
+  | `Not_effect_with_args of id (* An effect declared without arguments attempts to pass an argument. *)
+  | `Not_effect_without_args of id (* The effect of an argument in handler is described without an argument. *)
+  | `Handler_without_continue (* There is no continuation in the effect handler. *)
+  | `Handler_without_effect (* The effect handler does not contain an effect. *)
+  | `Perform_with_no_effect (* The argument passed to perform is not an effect. *)
+  | `Not_continue_val of id (* The continuation variable does not actually contain the continuation. *)
   ]
 
 (* Constructors for types *)
@@ -29,7 +29,7 @@ val unbound_variable : 'a -> [> `Unbound_variable of 'a ]
 val unbound_effect : 'a -> [> `Unbound_effect of 'a ]
 val not_reachable : [> `Not_reachable ]
 val several_bounds : 'a -> [> `Several_bounds of 'a ]
-val not_effect_in_handler : [> `Not_effect_in_handler ]
+val handler_without_effect : [> `Handler_without_effect ]
 val wrong_effect_type : 'a -> 'b -> [> `Wrong_effect_typ of 'a * 'b ]
 val not_effect_with_args : 'a -> [> `Not_effect_with_args of 'a ]
 val not_effect_without_args : 'a -> [> `Not_effect_without_args of 'a ]

@@ -73,5 +73,5 @@ let print_program_value val_env typ_env names_list =
     match typ, value with
     | Some (Scheme (_, typ)), Some value ->
       Format.printf "%s = %s\n" (expr_with_name name typ) (value_to_string value)
-    | _, _ -> Printf.printf "") (* Unreachable *)
+    | _, _ -> Printf.printf "")
 ;;

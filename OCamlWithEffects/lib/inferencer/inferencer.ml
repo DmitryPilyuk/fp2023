@@ -675,7 +675,7 @@ let infer_expr =
             (* Check the pattern effect for several bound. *)
             handler_type env expr cont
           | _ -> fail (not_effect_without_args name))
-       | _ -> fail not_effect_in_handler)
+       | _ -> fail handler_without_effect)
   in
   helper
 ;;

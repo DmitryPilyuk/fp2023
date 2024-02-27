@@ -7,7 +7,7 @@ open Typedtree
 val print_inferencer_error
   :  [< `Handler_without_continue
      | `Not_continue_val of string
-     | `Not_effect_in_handler
+     | `Handler_without_effect
      | `Not_effect_with_args of string
      | `Not_effect_without_args of string
      | `Not_reachable

@@ -54,23 +54,23 @@ let pp_type ppf typ =
 ;;
 
 let pp_error ppf = function
-  | `Occurs_check -> Format.fprintf ppf "Occurs check failed."
+  | `Occurs_check -> Format.fprintf ppf "Type error: occurs check failed."
   | `Not_reachable -> Format.fprintf ppf "Not reachable."
   | `Unification_failed (l, r) ->
     Format.fprintf
       ppf
-      "Unification failed: type %a does not match expected type %a"
+      "Type error: unification failed - type %a does not match expected type %a"
       pp_type
       l
       pp_type
       r
-  | `Unbound_variable name -> Format.fprintf ppf "Unbound variable '%s'" name
-  | `Unbound_effect name -> Format.fprintf ppf "Unbound effect '%s'" name
-  | `Several_bounds name -> Format.fprintf ppf "Variable '%s' is bound several times" name
-  | `Not_effect_in_handler ->
+  | `Unbound_variable name -> Format.fprintf ppf "Type error: unbound variable '%s'" name
+  | `Unbound_effect name -> Format.fprintf ppf "Type error: unbound effect '%s'" name
+  | `Several_bounds name -> Format.fprintf ppf "Type error: variable '%s' is bound several times" name
+  | `Handler_without_effect ->
     Format.fprintf
       ppf
-      "Left side of effect handler can only contain an effect with continue point."
+      "Type error: left side of effect handler can only contain an effect with continue point."
   | `Wrong_effect_typ (name, typ) ->
     let expected_typ =
       match typ with
@@ -79,7 +79,7 @@ let pp_error ppf = function
     in
     Format.fprintf
       ppf
-      "Effect %s is of type %a, but type %a was expected."
+      "Type error: effect %s is of type %a, but type %a was expected."
       name
       pp_type
       typ
@@ -88,22 +88,22 @@ let pp_error ppf = function
   | `Not_effect_with_args name ->
     Format.fprintf
       ppf
-      "Effect '%s' cannot take arguments - it is an effect without arguments."
+      "Type error: effect '%s' cannot take arguments - it is an effect without arguments."
       name
   | `Not_effect_without_args name ->
     Format.fprintf
       ppf
-      "Effect '%s' is an effect that takes an argument, but it's presented without an \
+      "Type error: effect '%s' is an effect that takes an argument, but it's presented without an \
        argument in the handler."
       name
   | `Perform_with_no_effect ->
     Format.fprintf
       ppf
-      "The type of the argument passed to perform must be the effect typ."
+      "Type error: the type of the argument passed to perform must be the effect typ."
   | `Not_continue_val name ->
-    Format.fprintf ppf "Variable '%s' is not continue variable. " name
+    Format.fprintf ppf "Type error: variable '%s' is not continue variable. " name
   | `Handler_without_continue ->
-    Format.fprintf ppf "The effect handler does not contain a continuation."
+    Format.fprintf ppf "Type error: the effect handler does not contain a continuation."
 ;;
 
 let print_inferencer_error e =
@@ -122,4 +122,3 @@ let print_program_type env names_list =
     | Some (Scheme (_, typ)) -> Format.printf "%s\n" (expr_with_name name typ)
     | _ -> Format.printf "")
 ;;
-(* Unreachable *)

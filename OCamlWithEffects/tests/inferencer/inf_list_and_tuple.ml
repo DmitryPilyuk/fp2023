@@ -11,7 +11,7 @@ let%expect_test _ =
     {| 
       5 :: 6
     |};
-  [%expect {| Unification failed: type int does not match expected type int list |}]
+  [%expect {| Type error: unification failed - type int does not match expected type int list |}]
 ;;
 
 let%expect_test _ =
@@ -30,7 +30,7 @@ let%expect_test _ =
     {| 
       5 :: 'c'
     |};
-  [%expect {| Unification failed: type char does not match expected type int list |}]
+  [%expect {| Type error: unification failed - type char does not match expected type int list |}]
 ;;
 
 (* ---------------- *)

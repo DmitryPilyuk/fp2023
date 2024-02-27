@@ -17,7 +17,7 @@ inference
   {|
     effect E : int
   |};
-  [%expect {| Effect E is of type int, but type int effect was expected. |}]
+  [%expect {| Type error: effect E is of type int, but type int effect was expected. |}]
 ;;
 
 let%expect_test _ =
@@ -33,7 +33,7 @@ let%expect_test _ =
   {|
     effect E : (int -> bool) -> (char -> string) -> (int->bool)
   |};
-  [%expect {| Effect E is of type (int -> bool -> char -> string) -> int -> bool, but type (int -> bool -> char -> string) -> (int -> bool) effect was expected. |}]
+  [%expect {| Type error: effect E is of type (int -> bool -> char -> string) -> int -> bool, but type (int -> bool -> char -> string) -> (int -> bool) effect was expected. |}]
 ;;
 
 let%expect_test _ =
@@ -49,7 +49,7 @@ let%expect_test _ =
   {|
     effect E : int * int -> int
   |};
-  [%expect {| Effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
+  [%expect {| Type error: effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
 ;;
 
 let%expect_test _ =
@@ -61,7 +61,7 @@ let%expect_test _ =
       | _ -> 0
     ;;
     |};
-  [%expect {| Unbound effect 'E' |}]
+  [%expect {| Type error: unbound effect 'E' |}]
 ;;
 
 let%expect_test _ =
@@ -85,7 +85,7 @@ let%expect_test _ =
     ;;
   |};
   [%expect {|
-    Left side of effect handler can only contain an effect with continue point. |}]
+    Type error: left side of effect handler can only contain an effect with continue point. |}]
 ;;
 
 let%expect_test _ =
@@ -97,7 +97,7 @@ let%expect_test _ =
       | (E x) k -> continue k 1
   |};
   [%expect {|
-    Effect 'E' cannot take arguments - it is an effect without arguments. |}]
+    Type error: effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
 
 let%expect_test _ =
@@ -109,7 +109,7 @@ let%expect_test _ =
       | E k -> continue k 1
   |};
   [%expect {|
-    Effect 'E' is an effect that takes an argument, but it's presented without an argument in the handler. |}]
+    Type error: effect 'E' is an effect that takes an argument, but it's presented without an argument in the handler. |}]
 ;;
 
 let%expect_test _ =
@@ -121,7 +121,7 @@ let%expect_test _ =
       | (E x) k -> 0
   |};
   [%expect {|
-    The effect handler does not contain a continuation. |}]
+    Type error: the effect handler does not contain a continuation. |}]
 ;;
 
 let%expect_test _ =
@@ -135,7 +135,7 @@ let%expect_test _ =
       | (E x) k -> continue l 1
   |};
   [%expect {|
-    Variable 'l' is not continue variable. |}]
+    Type error: variable 'l' is not continue variable. |}]
 ;;
 
 let%expect_test _ =
@@ -147,7 +147,7 @@ let%expect_test _ =
       | (E x) k -> continue l 1
   |};
   [%expect {|
-    Unbound variable 'l' |}]
+    Type error: unbound variable 'l' |}]
 ;;
 
 let%expect_test _ =
@@ -161,5 +161,5 @@ let%expect_test _ =
       | E k -> continue k 0
   |};
   [%expect {|
-    The type of the argument passed to perform must be the effect typ. |}]
+    Type error: the type of the argument passed to perform must be the effect typ. |}]
 ;;

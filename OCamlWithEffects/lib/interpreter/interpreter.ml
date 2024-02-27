@@ -322,6 +322,8 @@ module Interpreter (M : MONAD_ERROR) = struct
                 let* _, result = helper env'' handlers expr in
                 return (env, result)
               | UnSuccessful -> match_cases env rest)
+        in
+        match_cases env cases
       | ETryWith (expr, body) ->
         (* Go through all the effect handlers and add them to the handler environment. *)
         (* And then, using this environment - calculate the expr at which the effect can perform. *)
@@ -381,8 +383,6 @@ module Interpreter (M : MONAD_ERROR) = struct
                    give an error, since ordinary exceptions are not processed. *)
               | UnSuccessful -> fail type_error)
          | _ -> fail type_error)
-        in
-        match_cases env cases
 
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
