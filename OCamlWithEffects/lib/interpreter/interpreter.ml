@@ -206,14 +206,10 @@ module Interpreter (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  let rec eval_handler handler v =
-    let env = empty in
-    let rec helper =
-      match handler, v with
-      | (p, _, cont), (VEffectWithoutArguments _)
-      | (p, _, cont), (VEffectWithArguments _) -> return (cont, (eval_pattern p v))
-    in
-    helper
+  let eval_handler handler v = 
+    match handler, v with
+    | (p, _, _), VEffectWithoutArguments _
+    | (p, _, _), VEffectWithArguments _ -> eval_pattern p v
   ;;
 
   let eval =
@@ -281,13 +277,13 @@ module Interpreter (M : MONAD_ERROR) = struct
         (match v1 with
          | VFun (pat, exp, fun_env) ->
            let* flag, pat_env = eval_pattern pat v2 in
-           checker flag fun_env pat_env env handlers exp
+           application_helper flag fun_env pat_env env handlers exp
          | VRecFun (name, v) ->
            (match v with
             | VFun (pat, exp, fun_env) ->
               let fun_env = extend fun_env name v1 in
               let* flag, pat_env = eval_pattern pat v2 in
-              checker flag fun_env pat_env env handlers exp
+              application_helper flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
       | EEffectDeclaration (name, _) ->
@@ -318,7 +314,6 @@ module Interpreter (M : MONAD_ERROR) = struct
                  | _ -> fail type_error
                in
                trywith_helper handlers tl)
-          (* в try_with могут быть только handler *)
         in
         let* handlers = trywith_helper handlers body in
         let* _, v = helper env handlers expr in
@@ -342,8 +337,8 @@ module Interpreter (M : MONAD_ERROR) = struct
          | VEffectWithArguments (name, _) | VEffectWithoutArguments name ->
            let* _ = find_effect env name in
            let* handler = find_handler handlers name in
-            let* cont, pat_result = eval_handler handler v in
-            let* flag, pat_env = pat_result in
+           let* flag, pat_env  = eval_handler handler v in
+           let _, expr, cont = handler in
             (match flag with
               | Successful ->
                 let new_env = compose env pat_env in
@@ -351,20 +346,17 @@ module Interpreter (M : MONAD_ERROR) = struct
                   match cont with
                   | Continue k -> return k
                 in
-                (* другая ошибка *)
                 let new_env = extend new_env cont_val (veffect_continue cont) in
                 let* _, v = helper new_env handlers expr in
                 (match v with
                 | VThrowingValue n -> return (env, n)
                 | _ -> fail (handler_without_continue name))
               | UnSuccessful -> fail type_error)
-            (* другая ошибка *)
          | _ -> fail type_error)
-        (* в перформ может быть только эффект *)
       | EMatchWith (expr, cases) ->
         let* _, v = helper env handlers expr in
         let rec match_cases env = function
-          | [] -> fail pattern_matching_failure (* Исправить потом на другую ошибку *)
+          | [] -> fail pattern_matching_failure
           | (pat, expr) :: rest ->
             let* flag, env' = eval_pattern pat v in
             (match flag with
@@ -378,7 +370,6 @@ module Interpreter (M : MONAD_ERROR) = struct
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
-        (* насчет инвайромента подумать *)
         let* env, value = helper env empty_handler expr in
         let* env, rest_values = list_and_tuple_helper env rest in
         return (env, value :: rest_values)
@@ -391,13 +382,13 @@ module Interpreter (M : MONAD_ERROR) = struct
       in
       let new_env = extend env name res in
       return (new_env, res)
-    and checker flag fun_env pat_env env handlers exp =
+    and application_helper flag fun_env pat_env env handlers exp =
       match flag with
       | Successful ->
         let new_env = compose fun_env pat_env in
         let* _, v = helper new_env handlers exp in
         return (env, v)
-      | UnSuccessful -> fail type_error (* Другая ошибка *)
+      | UnSuccessful -> fail type_error
     in
     helper
   ;;
