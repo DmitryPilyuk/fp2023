@@ -353,13 +353,16 @@ let parse_fun pack =
       ; parse_ident
       ]
   in
-  skip_wspace *> string "fun" *> many1 parse_pattern
-  >>= fun args ->
-  arrow *> parse_expr
-  >>= fun expr ->
-  match List.rev args with
-  | h :: tl -> return (List.fold_left (fun acc x -> efun x acc) (efun h expr) tl)
-  | _ -> fail "Error"
+  let fun_helper =
+    skip_wspace *> string "fun" *> many1 parse_pattern
+    >>= fun args ->
+    arrow *> parse_expr
+    >>= fun expr ->
+    match List.rev args with
+    | h :: tl -> return (List.fold_left (fun acc x -> efun x acc) (efun h expr) tl)
+    | _ -> fail "Error"
+  in
+  parens fun_helper <|> fun_helper
 ;;
 
 let parse_list_cons pack =
