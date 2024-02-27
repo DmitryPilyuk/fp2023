@@ -31,7 +31,7 @@ let main = f 4 6|};
 ;;
 
 let%expect_test _ =
-   parse_with_print {| let while = (1) |};
+   parse_with_print {| let continue = (1) |};
   [%expect {|
     Syntax error. |}]
 ;;

@@ -4,6 +4,40 @@
 
 open Ocaml_with_effects_lib.Run
 
+(* Constants *)
+
+let%expect_test _ =
+  interpret {| 1 |};
+  [%expect {|
+    - : int = 1 |}]
+;;
+
+let%expect_test _ =
+  interpret {| 'a' |};
+  [%expect {|
+    - : char = 'a' |}]
+;;
+
+let%expect_test _ =
+  interpret {| "str" |};
+  [%expect {|
+    - : string = "str" |}]
+;;
+
+let%expect_test _ =
+  interpret {| false |};
+  [%expect {|
+    - : bool = false |}]
+;;
+
+let%expect_test _ =
+  interpret {| () |};
+  [%expect {|
+    - : unit = () |}]
+;;
+
+(* ---------------- *)
+
 (* Bynary operations *)
 
 let%expect_test _ =

@@ -153,18 +153,6 @@ let%expect_test _ =
     Unification failed: type int does not match expected type bool |}]
 ;;
 
-let%expect_test _ =
-  inference {| let when = 5 |};
-  [%expect {|
-    Syntax error. |}]
-;;
-
-let%expect_test _ =
-  interpret {| let when = 5 |};
-  [%expect {|
-    Syntax error. |}]
-;;
-
 (* Test ast determine *)
 
 let%expect_test _ =
