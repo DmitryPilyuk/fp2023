@@ -182,6 +182,7 @@ end = struct
        | Ok r -> r
        | _ -> fail (unification_failed l r))
     | TEffect typ1, TEffect typ2 -> unify typ1 typ2
+    | TContinuation _, TContinuation _ -> return empty
     | _ -> fail (unification_failed l r)
 
   (* Expanding the substitution with a new key-value. *)
