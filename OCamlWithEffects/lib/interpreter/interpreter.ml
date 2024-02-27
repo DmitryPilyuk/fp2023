@@ -210,8 +210,8 @@ module Interpreter (M : MONAD_ERROR) = struct
     let env = empty in
     let rec helper =
       match handler, v with
-      | EffectHandler (p, _, _), (VEffectWithoutArguments _ as v) -> eval_pattern p v
-      | EffectHandler (p, _, _), (VEffectWithArguments _ as v) -> eval_pattern p v
+      | (p, _, cont), (VEffectWithoutArguments _)
+      | (p, _, cont), (VEffectWithArguments _) -> return (cont, (eval_pattern p v))
     in
     helper
   ;;
@@ -342,24 +342,23 @@ module Interpreter (M : MONAD_ERROR) = struct
          | VEffectWithArguments (name, _) | VEffectWithoutArguments name ->
            let* _ = find_effect env name in
            let* handler = find_handler handlers name in
-           (match handler with
-            | pat, expr, cont ->
-              let* flag, pat_env = eval_pattern pat v in
-              (match flag with
-               | Successful ->
-                 let new_env = compose env pat_env in
-                 let* cont_val =
-                   match cont with
-                   | Continue k -> return k
-                 in
-                 (* другая ошибка *)
-                 let new_env = extend new_env cont_val (veffect_continue cont) in
-                 let* _, v = helper new_env handlers expr in
-                 (match v with
-                  | VThrowingValue n -> return (env, n)
-                  | _ -> fail (handler_without_continue name))
-               | UnSuccessful -> fail type_error)
-              (* другая ошибка *))
+            let* cont, pat_result = eval_handler handler v in
+            let* flag, pat_env = pat_result in
+            (match flag with
+              | Successful ->
+                let new_env = compose env pat_env in
+                let* cont_val =
+                  match cont with
+                  | Continue k -> return k
+                in
+                (* другая ошибка *)
+                let new_env = extend new_env cont_val (veffect_continue cont) in
+                let* _, v = helper new_env handlers expr in
+                (match v with
+                | VThrowingValue n -> return (env, n)
+                | _ -> fail (handler_without_continue name))
+              | UnSuccessful -> fail type_error)
+            (* другая ошибка *)
          | _ -> fail type_error)
         (* в перформ может быть только эффект *)
       | EMatchWith (expr, cases) ->
