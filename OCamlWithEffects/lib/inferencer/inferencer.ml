@@ -57,7 +57,7 @@ end = struct
   let fresh last = last + 1, Result.Ok last (* Get new state *)
 
   module Syntax = struct
-    let ( let* ) x f = bind x ~f (* Syntactic sugar for bind *)
+    let ( let* ) x f = bind x ~f (* Syntax sugar for bind *)
   end
 
   module RMap = struct
@@ -602,12 +602,16 @@ let infer_expr =
       in
       RList.fold_left cases ~init:(return (sub1, fv)) ~f
     | ETryWith (expr, body) ->
+      (* Find the expr type, and then check each handler for correctness.
+         If everything is correct, we return expr as the type. *)
       let* sub, typ = helper env expr in
       let* result =
         RList.fold_left body ~init:(return []) ~f:(fun acc handler ->
           let* _, handler_typ = infer_handler env handler in
           match handler_typ with
-          | TContinuation _ -> return acc
+          | TContinuation (_, cont_ty) -> 
+            let* _ = Subst.unify cont_ty typ in
+            return acc
           | _ -> return [ handler ])
       in
       (match result with
@@ -640,7 +644,7 @@ let infer_expr =
   and infer_handler env handler =
     (* Check that the effect handler is defined correctly.
        If everything is correct, it returns the continuation type. *)
-    let handler_type env name expr = function
+    let handler_type env expr = function
       | Continue k ->
         let schm = Scheme (TVarSet.empty, tcontinue_point) in
         let env' = TypeEnv.extend env k schm in
@@ -654,12 +658,14 @@ let infer_expr =
          let* sub1, ty1 = lookup_env env name in
          let* ty2, env' = infer_pattern env pat_n in
          (match ty1 with
-          | TArr (arg_ty, eff) ->
-            let* sub3 = Subst.unify arg_ty ty2 in
-            let* sub = Subst.compose_all [ sub1; sub3 ] in
-            let* _ = infer_pattern env pat in
+          | TArr (arg_ty, _) ->
+            (* Check that the thoring value will correspond to the expected one. *)
+            let* sub2 = Subst.unify arg_ty ty2 in
+            let* sub = Subst.compose_all [ sub1; sub2 ] in
+            let env'' = TypeEnv.apply env' sub in
             (* Check the pattern effect for several bound. *)
-            handler_type env' name expr cont
+            let* _ = infer_pattern env pat in
+            handler_type env'' expr cont
           | _ -> fail (not_effect_with_args name))
        | PEffectWithoutArguments name ->
          let* _, ty = lookup_env env name in
@@ -667,7 +673,7 @@ let infer_expr =
           | TEffect _ ->
             let* _ = infer_pattern env pat in
             (* Check the pattern effect for several bound. *)
-            handler_type env name expr cont
+            handler_type env expr cont
           | _ -> fail (not_effect_without_args name))
        | _ -> fail not_effect_in_handler)
   in
