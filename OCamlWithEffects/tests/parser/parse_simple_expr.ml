@@ -28,6 +28,33 @@ let%expect_test _ =
 
 (* ---------------- *)
 
+(* Unary operations *)
+
+let%expect_test _ =
+  parse_with_print {| -1 |};
+  [%expect
+    {|
+    [(EUnaryOperation (Minus, (EConst (Int 1))))] |}]
+;;
+
+let%expect_test _ =
+  parse_with_print {| not true |};
+  [%expect
+    {|
+    [(EUnaryOperation (Not, (EConst (Bool true))))] |}]
+;;
+
+let%expect_test _ =
+  parse_with_print {| +(-(+3)) |};
+  [%expect
+    {|
+    [(EUnaryOperation (Plus,
+        (EUnaryOperation (Minus, (EUnaryOperation (Plus, (EConst (Int 3))))))))
+      ] |}]
+;;
+
+(* ---------------- *)
+
 (* If Then Else *)
 
 let%expect_test _ =

@@ -75,9 +75,14 @@ parse_with_print{| let f =
 ;;
 
 let%expect_test _ =
-   parse_with_print {| let f x = x ;; let g = f 5 in g |};
+   parse_with_print {| let rec f x = f (x-1) ;; let g = f 5 in g |};
   [%expect {|
-    [(EDeclaration ("f", (EFun ((PVal "x"), (EIdentifier "x"))), None));
+    [(ERecDeclaration ("f",
+        (EFun ((PVal "x"),
+           (EApplication ((EIdentifier "f"),
+              (EBinaryOperation (Sub, (EIdentifier "x"), (EConst (Int 1))))))
+           )),
+        None));
       (EDeclaration ("g", (EApplication ((EIdentifier "f"), (EConst (Int 5)))),
          (Some (EIdentifier "g"))))
       ] |}]
@@ -85,7 +90,36 @@ let%expect_test _ =
 
 (* ---------------- *)
 
-(* Functions *)
+(* Functions and application *)
+
+let%expect_test _ =
+  parse_with_print
+    {| fun x -> x + 1 ;;|};
+  [%expect {|
+    [(EFun ((PVal "x"),
+        (EBinaryOperation (Add, (EIdentifier "x"), (EConst (Int 1))))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  parse_with_print
+    {| (fun x -> x + 1) 10000000 ;;|};
+  [%expect {|
+    [(EApplication (
+        (EFun ((PVal "x"),
+           (EBinaryOperation (Add, (EIdentifier "x"), (EConst (Int 1)))))),
+        (EConst (Int 10000000))))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {| fun (a :: b) -> a :: b |};
+  [%expect {|
+    [(EFun ((PListCons ((PVal "a"), (PVal "b"))),
+        (EListCons ((EIdentifier "a"), (EIdentifier "b")))))
+      ] |}]
+;;
 
 let%expect_test _ =
 parse_with_print{|

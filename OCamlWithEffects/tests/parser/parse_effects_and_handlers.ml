@@ -8,6 +8,43 @@ let%expect_test _ =
 parse_with_print
     {|
     effect E1 : int -> int effect
+  |};
+  [%expect
+    {|
+    [(EEffectDeclaration ("E1", (AArrow (AInt, (AEffect AInt)))))] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    try perform E1 x with
+    | E (a :: b) k -> continue k 0
+    | E (a :: b :: c) k -> continue k 1
+    | E x -> continue k 2
+  |};
+  [%expect
+    {|
+    Syntax error. |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    let f1 = perform E
+    let f2 = perform E x
+  |};
+  [%expect
+    {|
+    [(EDeclaration ("f1", (EEffectPerform (EEffectWithoutArguments "E")), None));
+      (EDeclaration ("f2",
+         (EEffectPerform (EEffectWithArguments ("E", (EIdentifier "x")))), None))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    effect E1 : int -> int effect
     effect E2 : int -> int effect
 
     let f x = 

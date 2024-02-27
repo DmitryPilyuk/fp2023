@@ -52,3 +52,31 @@ let%expect_test _ =
         None))
       ] |}]
 ;;
+
+let%expect_test _ =
+  parse_with_print
+    {|
+  let f x = 
+    (match x with 
+    | (x, y) -> x + y
+    | (x, y, z) -> x + y + z
+    | _ -> 0)
+  |};
+  [%expect
+    {|
+    [(EDeclaration ("f",
+        (EFun ((PVal "x"),
+           (EMatchWith ((EIdentifier "x"),
+              [((PTuple [(PVal "x"); (PVal "y")]),
+                (EBinaryOperation (Add, (EIdentifier "x"), (EIdentifier "y"))));
+                ((PTuple [(PVal "x"); (PVal "y"); (PVal "z")]),
+                 (EBinaryOperation (Add,
+                    (EBinaryOperation (Add, (EIdentifier "x"), (EIdentifier "y")
+                       )),
+                    (EIdentifier "z"))));
+                (PAny, (EConst (Int 0)))]
+              ))
+           )),
+        None))
+      ] |}]
+;;

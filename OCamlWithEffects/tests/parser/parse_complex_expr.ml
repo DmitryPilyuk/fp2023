@@ -169,3 +169,29 @@ parse_with_print
 ;;
 
 (* ---------------- *)
+
+(* Fibonacci *)
+
+let%expect_test _ =
+  parse_with_print
+    {| let rec fib n = if n > 1 then fib (n - 1) + fib (n - 2) else 1;; |};
+  [%expect {|
+    [(ERecDeclaration ("fib",
+        (EFun ((PVal "n"),
+           (EIfThenElse (
+              (EBinaryOperation (Gt, (EIdentifier "n"), (EConst (Int 1)))),
+              (EBinaryOperation (Add,
+                 (EApplication ((EIdentifier "fib"),
+                    (EBinaryOperation (Sub, (EIdentifier "n"), (EConst (Int 1))))
+                    )),
+                 (EApplication ((EIdentifier "fib"),
+                    (EBinaryOperation (Sub, (EIdentifier "n"), (EConst (Int 2))))
+                    ))
+                 )),
+              (EConst (Int 1))))
+           )),
+        None))
+      ] |}]
+;;
+
+(* ---------------- *)
