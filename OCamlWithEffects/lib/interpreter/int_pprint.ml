@@ -27,8 +27,8 @@ let pp_value ppf typ =
     | VRecFun _ -> Format.fprintf ppf "<fun>"
     | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ ->
       Format.fprintf ppf "<effect>"
-    | VEffectContinue k -> Format.fprintf ppf "<continue>"
-    | VThrowingValue v -> Format.fprintf ppf "value"
+    | VEffectContinue _ -> Format.fprintf ppf "<continue>"
+    | VThrowingValue _ -> Format.fprintf ppf "value"
   in
   helper ppf typ
 ;;

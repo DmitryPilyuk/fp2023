@@ -45,8 +45,8 @@ type effect_types_annotation =
   | AEffect of effect_types_annotation (** int effect *)
 [@@deriving show { with_path = false }]
 
-(** continue k 0 - here k is continue variable *)
-type continue_val = Continue of id [@@deriving show { with_path = false }]
+type continue_val = Continue of id (** continue k 0 - here k is continue variable *)
+[@@deriving show { with_path = false }]
 
 type pattern =
   | PAny (** _ *)
