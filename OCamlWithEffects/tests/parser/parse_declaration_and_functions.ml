@@ -69,3 +69,25 @@ parse_with_print{| let f =
 ;;
 
 (* ---------------- *)
+
+(* Functions *)
+
+let%expect_test _ =
+parse_with_print{|
+   fun x ->
+      (match x with
+      | [] -> 0
+      | hd :: tl -> 1)
+  |};
+  [%expect
+    {|
+    [(EFun ((PVal "x"),
+        (EMatchWith ((EIdentifier "x"),
+           [(PNill, (EConst (Int 0)));
+             ((PListCons ((PVal "hd"), (PVal "tl"))), (EConst (Int 1)))]
+           ))
+        ))
+      ] |}]
+;;
+
+(* ---------------- *)
