@@ -212,7 +212,7 @@ let subtraction = skip_wspace *> char '-' >>| ssub
 let multiplication = skip_wspace *> char '*' >>| smul
 let division = skip_wspace *> char '/' >>| sdiv
 let eqality = skip_wspace *> char '=' >>| seq
-let neqality = skip_wspace *> string "!=" <|> string "<>" >>| sneq
+let neqality = skip_wspace *> (string "<>" <|> string "!=") >>| sneq
 let logand = skip_wspace *> string "&&" >>| sand
 let logor = skip_wspace *> string "||" >>| sor
 let larger = skip_wspace *> char '>' >>| sgt
