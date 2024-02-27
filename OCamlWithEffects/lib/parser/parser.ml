@@ -466,11 +466,11 @@ let parse_effect_with_arguments pack =
   @@ fun self ->
   let parse_expr =
     choice
-      [ parens @@ pack.parse_tuple pack
-      ; parens @@ pack.parse_list_cons pack
+      [ pack.parse_tuple pack <|> parens (pack.parse_tuple pack)
+      ; pack.parse_list_cons pack <|> parens (pack.parse_list_cons pack)
       ; parens @@ pack.parse_bin_op pack
       ; parens @@ pack.parse_un_op pack
-      ; pack.parse_list pack
+      ; pack.parse_list pack <|> parens (pack.parse_list pack)
       ; parens @@ pack.parse_perform pack
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_fun pack
