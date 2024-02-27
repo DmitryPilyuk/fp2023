@@ -9,9 +9,10 @@ open Ocaml_with_effects_lib.Run
 let%expect_test _ =
   inference
     {|
-    let f x = match x with
-    | hd :: tl -> hd
-    | [] -> 0
+    let f x = 
+      match x with
+      | hd :: tl -> hd
+      | [] -> 0
     ;;
     |};
   [%expect {| val f : int list -> int |}]
@@ -72,9 +73,10 @@ let%expect_test _ =
 let%expect_test _ =
   inference
     {|
-    let f x = match x with
-    | (x, y) -> x
-    | _ -> true
+    let f x = 
+      match x with
+      | (x, y) -> x
+      | _ -> true
     ;;
     |};
   [%expect {| val f : bool * 'd -> bool |}]
@@ -95,9 +97,10 @@ let%expect_test _ =
 let%expect_test _ =
   inference
     {|
-    let f x = match x with
-    | (x, y, x) -> 0
-    | _ -> 0
+    let f x = 
+      match x with
+      | (x, y, x) -> 0
+      | _ -> 0
     ;;
     |};
   [%expect {| Type error: variable 'x' is bound several times |}]
@@ -106,9 +109,10 @@ let%expect_test _ =
 let%expect_test _ =
   inference
     {|
-    let f x = match x with
-    | (x, y, (z,q,(c,k,(l,x)))) -> 0
-    | _ -> 0
+    let f x = 
+      match x with
+      | (x, y, (z,q,(c,k,(l,x)))) -> 0
+      | _ -> 0
     ;;
     |};
   [%expect {| Type error: variable 'x' is bound several times |}]
@@ -278,20 +282,5 @@ let%expect_test _ =
   [%expect {|
     Type error: effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
-
-(* let%expect_test _ =
-  inference
-    {|
-    effect E : bool -> int effect
-    let f x = 
-      match x with
-      | (E true) -> false
-      | (E false) -> true
-    ;;
-
-    let res = f (E true)
-    |};
-  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
-;; *)
 
 (* ---------------- *)

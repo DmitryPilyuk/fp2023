@@ -69,12 +69,12 @@ let%expect_test _ =
   [%expect {| - : int * char * string * bool * unit |}]
 ;;
 
-(* let%expect_test _ =
+let%expect_test _ =
   inference
     {| 
-      (1, (1,'a'), "name", 'a', ((true, false, 4) :: (false, true, 4) :: (false, true, 4) :: []))
+      (1, (1,'a'), "name", 'a', true :: false :: [])
     |};
-  [%expect {| Unification failed: type char does not match expected type int |}]
-;; *)
+  [%expect {| - : int * int * char * string * char * bool list |}]
+;;
 
 (* ---------------- *)

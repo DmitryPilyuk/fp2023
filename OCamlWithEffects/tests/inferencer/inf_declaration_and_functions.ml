@@ -41,3 +41,17 @@ let%expect_test _ =
 ;;
 
 (* ---------------- *)
+
+(* Functions tests*)
+
+let%expect_test _ =
+  inference {| fun x -> x |};
+  [%expect {| - : 'a -> 'a |}]
+;;
+
+let%expect_test _ =
+  inference {| fun x -> (x+1) > 3 |};
+  [%expect {| - : int -> bool |}]
+;;
+
+(* ---------------- *)
