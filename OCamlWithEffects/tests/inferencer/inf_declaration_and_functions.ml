@@ -17,11 +17,6 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference {| let rec fact n = if n = 1 then 1 else n * fact (n - 1) |};
-  [%expect {| val fact : int -> int |}]
-;;
-
-let%expect_test _ =
   inference {| let f g x y = if g x then x * y else y |};
   [%expect {| val f : (int -> bool) -> int -> int -> int |}]
 ;;
@@ -29,6 +24,20 @@ let%expect_test _ =
 let%expect_test _ =
   inference {| let f = match x with | _ -> 0 |};
   [%expect {| Unbound variable 'x' |}]
+;;
+
+(* ---------------- *)
+
+(* Rec declarations inference tests *)
+
+let%expect_test _ =
+  inference {| let rec fact n = if n = 1 then 1 else n * fact (n - 1) |};
+  [%expect {| val fact : int -> int |}]
+;;
+
+let%expect_test _ =
+  inference {| let rec f = f 4 |};
+  [%expect {| Occurs check failed. |}]
 ;;
 
 (* ---------------- *)
