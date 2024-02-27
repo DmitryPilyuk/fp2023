@@ -47,6 +47,11 @@ let%expect_test _ =
   [%expect {| val x : char * int list list |}]
 ;;
 
+let%expect_test _ =
+  inference {| let x = [fun x -> x + 1 ; fun x -> x + 2 ; fun x -> x + 3] |};
+  [%expect {| val x : char * int list list |}]
+;;
+
 (* ---------------- *)
 
 (* Tuple *)

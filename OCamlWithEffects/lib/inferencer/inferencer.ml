@@ -136,7 +136,7 @@ end = struct
   let empty = Base.Map.empty (module Base.Int)
 
   (* Creates a pair if no error occurs. *)
-  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
+  let mapping k v = if Type.occurs_in k v then fail occurs_check else return (k, v)
 
   let singleton k v =
     let* k, v = mapping k v in

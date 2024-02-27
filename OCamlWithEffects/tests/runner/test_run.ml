@@ -141,6 +141,33 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
+  interpret_program
+    [Ocaml_with_effects_lib.Ast.EDeclaration ("f",
+    Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Int 5), None);
+  Ocaml_with_effects_lib.Ast.EDeclaration ("g",
+    Ocaml_with_effects_lib.Ast.EUnaryOperation (Ocaml_with_effects_lib.Ast.Not,
+    Ocaml_with_effects_lib.Ast.EIdentifier "f"),
+    None)];
+  [%expect
+    {|
+    Unification failed: type int does not match expected type bool |}]
+;;
+
+let%expect_test _ =
+  inference {| let when = 5 |};
+  [%expect {|
+    Syntax error. |}]
+;;
+
+let%expect_test _ =
+  interpret {| let when = 5 |};
+  [%expect {|
+    Syntax error. |}]
+;;
+
+(* Test ast determine *)
+
+let%expect_test _ =
   inference {| let f x = x ;; let g = f 5 in g |};
   [%expect {|
     Syntax error. |}]
@@ -151,3 +178,5 @@ let%expect_test _ =
   [%expect {|
     Syntax error. |}]
 ;;
+
+(* ---------------- *)

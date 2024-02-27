@@ -79,6 +79,17 @@ let%expect_test _ =
 
 let%expect_test _ =
   inference {| 
+    let f x = 
+      try x with
+      | 1 k -> continue k 0
+    ;;
+  |};
+  [%expect {|
+    Left side of effect handler can only contain an effect with continue point. |}]
+;;
+
+let%expect_test _ =
+  inference {| 
     effect E : int effect ;;
 
     let f = 
@@ -87,4 +98,68 @@ let%expect_test _ =
   |};
   [%expect {|
     Effect 'E' cannot take arguments - it is an effect without arguments. |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int -> int effect ;;
+
+    let f = 
+      try perform (E 0) with
+      | E k -> continue k 1
+  |};
+  [%expect {|
+    Effect 'E' is an effect that takes an argument, but it's presented without an argument in the handler. |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int -> int effect ;;
+
+    let f = 
+      try perform (E 0) with
+      | (E x) k -> 0
+  |};
+  [%expect {|
+    The effect handler does not contain a continuation. |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int -> int effect ;;
+
+    let l = 0 ;; 
+
+    let f = 
+      try perform (E 0) with
+      | (E x) k -> continue l 1
+  |};
+  [%expect {|
+    Variable 'l' is not continue variable. |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int -> int effect ;;
+
+    let f = 
+      try perform (E 0) with
+      | (E x) k -> continue l 1
+  |};
+  [%expect {|
+    Unbound variable 'l' |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int effect ;;
+
+    let f = 0;;
+
+    let res = 
+      try perform f with
+      | E k -> continue k 0
+  |};
+  [%expect {|
+    The type of the argument passed to perform must be the effect typ. |}]
 ;;
