@@ -61,6 +61,11 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
+  interpret {| not (5 = 2) && 6 > 1 || 5 <= 1 |};
+  [%expect {| - : bool = true |}]
+;;
+
+let%expect_test _ =
   interpret {| 'a' < 'b' && 'b' > 'a' |};
   [%expect {|
     - : bool = true |}]
@@ -77,3 +82,31 @@ let%expect_test _ =
   [%expect {|
     - : bool = true |}]
 ;;
+
+(* ---------------- *)
+
+(* Unary operations *)
+
+let%expect_test _ =
+  interpret {| -5 |};
+  [%expect {|
+    - : int = -5 |}]
+;;
+
+let%expect_test _ =
+  interpret {| -(-(+(+(-(+(-(+(-(-(+(+5))))))))))) |};
+  [%expect {|
+    - : int = 5 |}]
+;;
+
+let%expect_test _ =
+  interpret {| 
+    let res1 = not true
+    let res2 = not false
+  |};
+  [%expect {|
+    val res1 : bool = false
+    val res2 : bool = true |}]
+;;
+
+(* ---------------- *)
