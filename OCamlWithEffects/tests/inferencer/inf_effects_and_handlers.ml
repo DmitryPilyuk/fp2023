@@ -38,6 +38,22 @@ let%expect_test _ =
 
 let%expect_test _ =
   inference
+  {|
+    effect E : int * int -> int effect
+  |};
+  [%expect {| val E : int * int -> int effect |}]
+;;
+
+let%expect_test _ =
+  inference
+  {|
+    effect E : int * int -> int
+  |};
+  [%expect {| Effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
+;;
+
+let%expect_test _ =
+  inference
     {|
     let f x = 
       match x with
@@ -46,4 +62,29 @@ let%expect_test _ =
     ;;
     |};
   [%expect {| Unbound effect 'E' |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int effect ;;
+
+    let f = 
+      try perform E with
+      | E k -> continue k 1
+  |};
+  [%expect {|
+    val E : int effect
+    val f : int |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    effect E : int effect ;;
+
+    let f = 
+      try perform E with
+      | (E x) k -> continue k 1
+  |};
+  [%expect {|
+    Effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;

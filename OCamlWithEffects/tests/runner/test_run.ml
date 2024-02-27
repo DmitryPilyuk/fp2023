@@ -139,3 +139,15 @@ let%expect_test _ =
     val g : int -> int = <fun>
     val z : bool = true |}]
 ;;
+
+let%expect_test _ =
+  inference {| let f x = x ;; let g = f 5 in g |};
+  [%expect {|
+    Syntax error. |}]
+;;
+
+let%expect_test _ =
+  interpret {| let f x = x ;; let g = f 5 in g |};
+  [%expect {|
+    Syntax error. |}]
+;;

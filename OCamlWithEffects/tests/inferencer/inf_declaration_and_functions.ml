@@ -4,7 +4,7 @@
 
 open Ocaml_with_effects_lib.Run
 
-(* Function inference tests *)
+(* Declaration inference tests *)
 
 let%expect_test _ =
   inference {| let f x = x + 1|};
@@ -24,6 +24,11 @@ let%expect_test _ =
 let%expect_test _ =
   inference {| let f g x y = if g x then x * y else y |};
   [%expect {| val f : (int -> bool) -> int -> int -> int |}]
+;;
+
+let%expect_test _ =
+  inference {| let f = match x with | _ -> 0 |};
+  [%expect {| Unbound variable 'x' |}]
 ;;
 
 (* ---------------- *)

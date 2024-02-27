@@ -279,4 +279,19 @@ let%expect_test _ =
     Effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
 
+(* let%expect_test _ =
+  inference
+    {|
+    effect E : bool -> int effect
+    let f x = 
+      match x with
+      | (E true) -> false
+      | (E false) -> true
+    ;;
+
+    let res = f (E true)
+    |};
+  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
+;; *)
+
 (* ---------------- *)

@@ -30,6 +30,12 @@ let main = f 4 6|};
     ] |}]
 ;;
 
+let%expect_test _ =
+   parse_with_print {| let while = (1) |};
+  [%expect {|
+    Syntax error. |}]
+;;
+
 (* ---------------- *)
 
 (* Let Rec *)
@@ -68,6 +74,15 @@ parse_with_print{| let f =
       ] |}]
 ;;
 
+let%expect_test _ =
+   parse_with_print {| let f x = x ;; let g = f 5 in g |};
+  [%expect {|
+    [(EDeclaration ("f", (EFun ((PVal "x"), (EIdentifier "x"))), None));
+      (EDeclaration ("g", (EApplication ((EIdentifier "f"), (EConst (Int 5)))),
+         (Some (EIdentifier "g"))))
+      ] |}]
+;;
+
 (* ---------------- *)
 
 (* Functions *)
@@ -88,6 +103,12 @@ parse_with_print{|
            ))
         ))
       ] |}]
+;;
+
+let%expect_test _ =
+   parse_with_print {| fun x -> match x with | rec -> rec | _ -> 0 |};
+  [%expect {|
+    Syntax error. |}]
 ;;
 
 (* ---------------- *)
