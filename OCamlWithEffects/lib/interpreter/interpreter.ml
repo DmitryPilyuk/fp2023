@@ -315,6 +315,7 @@ module Interpreter (M : MONAD_ERROR) = struct
                    return (extend_handler handlers name (pat, expr, cont))
                  | PEffectWithArguments (name, _) as pat ->
                    return (extend_handler handlers name (pat, expr, cont))
+                 | _ -> fail type_error
                in
                trywith_helper handlers tl)
           (* в try_with могут быть только handler *)
