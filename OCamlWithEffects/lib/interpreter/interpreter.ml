@@ -210,6 +210,7 @@ module Interpreter (M : MONAD_ERROR) = struct
     match handler, v with
     | (p, _, _), VEffectWithoutArguments _
     | (p, _, _), VEffectWithArguments _ -> eval_pattern p v
+    | _ -> fail type_error
   ;;
 
   let eval =
