@@ -529,9 +529,13 @@ let parse_list_cons pack =
       ; pack.parse_list pack
       ; pack.parse_application pack
       ; pack.parse_let_in pack
+      ; parens @@ pack.parse_perform pack
+      ; pack.parse_continue pack
+      ; pack.parse_effect_with_arguments pack
       ; parens @@ pack.parse_fun pack
       ; parens @@ pack.parse_if_then_else pack
       ; parens @@ pack.parse_match_with pack
+      ; parse_effect_without_arguments
       ; parse_const
       ; parse_ident
       ]
