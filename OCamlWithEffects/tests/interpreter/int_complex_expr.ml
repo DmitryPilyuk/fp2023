@@ -54,8 +54,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-interpret
-  {|
+  interpret
+    {|
     let g x = if x = 0 || x = 1 then true else false ;;
 
     let f x =
@@ -72,10 +72,11 @@ interpret
     let res2 = f [ 1 ; 0 ; 1 ; 3 ; 0 ; 1 ; 1 ]
     let res3 = f []
   |};
-  [%expect {|
+  [%expect
+    {|
     val g : int -> bool = <fun>
     val f : int list -> bool = <fun>
     val res1 : bool = true
     val res2 : bool = false
     val res3 : bool = true |}]
-  ;;
+;;
