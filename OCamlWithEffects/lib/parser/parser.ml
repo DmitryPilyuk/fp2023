@@ -400,6 +400,7 @@ let parse_un_op pack =
       [ parens self
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_if_then_else pack
+      ; parens @@ pack.parse_perform pack
       ; parse_const
       ; parse_ident
       ; parens @@ pack.parse_bin_op pack
@@ -411,6 +412,7 @@ let parse_un_op pack =
       ; parens self
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_if_then_else pack
+      ; parens @@ pack.parse_perform pack
       ; parse_const
       ; parse_ident
       ]
@@ -437,6 +439,7 @@ let parse_bin_op pack =
       ; pack.parse_fun pack
       ; pack.parse_let_in pack
       ; pack.parse_match_with pack
+      ; pack.parse_perform pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -471,6 +474,10 @@ let parse_if_then_else pack =
       ; pack.parse_tuple pack
       ; pack.parse_let_in pack
       ; pack.parse_match_with pack
+      ; pack.parse_continue pack
+      ; pack.parse_perform pack
+      ; pack.parse_effect_with_arguments pack
+      ; parse_effect_without_arguments
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; self
@@ -497,6 +504,10 @@ let parse_fun pack =
       ; pack.parse_tuple pack
       ; pack.parse_application pack
       ; pack.parse_match_with pack
+      ; pack.parse_continue pack
+      ; pack.parse_perform pack
+      ; pack.parse_effect_with_arguments pack
+      ; parse_effect_without_arguments
       ; pack.parse_if_then_else pack
       ; pack.parse_let_in pack
       ; parse_const
@@ -561,6 +572,10 @@ let parse_list pack =
       ; pack.parse_fun pack
       ; pack.parse_let_in pack
       ; pack.parse_match_with pack
+      ; pack.parse_continue pack
+      ; pack.parse_perform pack
+      ; pack.parse_effect_with_arguments pack
+      ; parse_effect_without_arguments
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -586,6 +601,10 @@ let parse_tuple pack =
       ; pack.parse_fun pack
       ; pack.parse_let_in pack
       ; pack.parse_match_with pack
+      ; pack.parse_continue pack
+      ; pack.parse_perform pack
+      ; pack.parse_effect_with_arguments pack
+      ; parse_effect_without_arguments
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident
@@ -656,6 +675,7 @@ let parse_let_in pack =
       ; pack.parse_perform pack
       ; pack.parse_continue pack
       ; pack.parse_match_with pack
+      ; pack.parse_effect_with_arguments pack
       ; pack.parse_try_with pack
       ; parse_effect_without_arguments
       ; self
