@@ -40,6 +40,7 @@ let inference_expr ast =
 ;;
 
 let inference program =
+  (* Main function for inference. *)
   let ast = parse program in
   let res =
     match ast with
@@ -47,7 +48,8 @@ let inference program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> inference_expr x)
+          | [ x ] -> inference_expr x
+          | _ -> print_parser_error syntax_error)
        | DeclarationList -> inference_program ast
        | MixedList -> print_parser_error syntax_error)
     | Error _ -> print_parser_error syntax_error
@@ -56,6 +58,8 @@ let inference program =
 ;;
 
 let interpret_program ast =
+  (* Here AST is a list of expressions like
+  EDeclaration(_,_,None), ERecDeclaration(_,_,None), EEffectDeclaration _. *)
   let res =
     match run_program_inferencer ast with
     | Ok (typ_env, names_list) ->
@@ -68,6 +72,7 @@ let interpret_program ast =
 ;;
 
 let interpret_expr ast =
+  (* Here AST is an arbitrary expression. *)
   let res =
     match run_expr_inferencer ast with
     | Ok typ ->
@@ -80,6 +85,7 @@ let interpret_expr ast =
 ;;
 
 let interpret program =
+  (* Main function for inference + interpret. *)
   let ast = parse program in
   let res =
     match ast with
@@ -87,7 +93,8 @@ let interpret program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> interpret_expr x)
+          | [ x ] -> interpret_expr x
+          | _ -> print_parser_error syntax_error)
        | DeclarationList -> interpret_program ast
        | MixedList -> print_parser_error syntax_error)
     | Error _ -> print_parser_error syntax_error
