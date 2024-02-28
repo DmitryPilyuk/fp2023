@@ -29,3 +29,53 @@ let res = fib 5;;|};
 ;;
 
 (* ---------------- *)
+
+let%expect_test _ =
+  interpret
+    {| let list_map f =
+      let rec helper l = match l with
+      | [] -> []
+      | h :: tl -> (f h) :: helper tl
+    in helper 
+    ;;
+
+    let increment x = x + 1;;
+
+    let test_list = [2; 4; 5; 3; 6; 3;];;
+
+    let res = list_map increment test_list
+    |};
+  [%expect
+    {|
+    val list_map : ('e -> 'f) -> 'm list -> 'n list = <fun>
+    val increment : int -> int = <fun>
+    val test_list : int list = [2; 4; 5; 3; 6; 3]
+    val res : 'n list = [3; 5; 6; 4; 7; 4] |}]
+;;
+
+let%expect_test _ =
+interpret
+  {|
+    let g x = if x = 0 || x = 1 then true else false ;;
+
+    let f x =
+      let rec helper x =
+        match x with
+        | [] -> true
+        | hd :: tl ->
+          (g hd) && helper tl
+      in
+      helper x
+    ;;
+
+    let res1 = f [ 1 ; 1 ; 0 ; 1 ; 1 ; 0 ; 1 ; 1 ; 0 ; 0 ; 1 ]
+    let res2 = f [ 1 ; 0 ; 1 ; 3 ; 0 ; 1 ; 1 ]
+    let res3 = f []
+  |};
+  [%expect {|
+    val g : int -> bool = <fun>
+    val f : int list -> bool = <fun>
+    val res1 : bool = true
+    val res2 : bool = false
+    val res3 : bool = true |}]
+  ;;

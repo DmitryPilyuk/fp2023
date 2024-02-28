@@ -6,9 +6,41 @@ open Ocaml_with_effects_lib.Run
 
 (* List contructions *)
 
+let%expect_test _ =
+  interpret {| 
+    (1 :: 2 :: []) :: (1 :: 2 :: []) :: []
+  |};
+  [%expect {|
+    - : int list list = [[1; 2]; [1; 2]] |}]
+;;
+
+let%expect_test _ =
+  interpret {| 
+    1 :: 'c' :: []
+  |};
+  [%expect {|
+    Type error: unification failed - type char does not match expected type int |}]
+;;
+
 (* ---------------- *)
 
 (* List *)
+
+let%expect_test _ =
+  interpret {| 
+    [1 ; 2 ; 3]
+  |};
+  [%expect {|
+    - : int list = [1; 2; 3] |}]
+;;
+
+let%expect_test _ =
+  interpret {| 
+    [(1, 2) ; (2, 3); (3, 4)]
+  |};
+  [%expect {|
+    - : int * int list = [(1, 2); (2, 3); (3, 4)] |}]
+;;
 
 (* ---------------- *)
 

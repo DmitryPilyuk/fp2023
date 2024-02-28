@@ -141,6 +141,16 @@ let%expect_test _ =
     - : bool = false |}]
 ;;
 
+let%expect_test _ =
+  interpret {| 1 + (-2) * 5 - 10 / 2 |};
+  [%expect {| - : int = -14 |}]
+;;
+
+let%expect_test _ =
+  interpret {| not (5 = 2) && 6 > 1 || 5 <= 1 |};
+  [%expect {| - : bool = true |}]
+;;
+
 (* ---------------- *)
 
 (* Unary operations *)
