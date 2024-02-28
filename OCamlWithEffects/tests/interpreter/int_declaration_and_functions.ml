@@ -21,7 +21,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   interpret {| (fun 5 -> 5) 6 |};
-  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
+  [%expect {| Error: pattern matching failure - the value does not match any pattern. |}]
 ;;
 
 let%expect_test _ =

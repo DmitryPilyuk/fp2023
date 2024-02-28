@@ -83,7 +83,7 @@ let%expect_test _ =
     f [1]
   |};
   [%expect {|
-    Pattern matching failure: the value does not match any pattern. |}]
+    Error: pattern matching failure - the value does not match any pattern. |}]
 ;;
 
 (* ---------------- *)
@@ -123,7 +123,7 @@ let%expect_test _ =
     f (1, 2)
   |};
   [%expect {|
-    Pattern matching failure: the value does not match any pattern. |}]
+    Error: pattern matching failure - the value does not match any pattern. |}]
 ;;
 
 (* ---------------- *)
@@ -141,7 +141,7 @@ let%expect_test _ =
     let res = f ((5,0), (6, 1))
     |};
   [%expect {|
-    Pattern matching failure: the value does not match any pattern. |}]
+    Error: pattern matching failure - the value does not match any pattern. |}]
 ;;
 
 let%expect_test _ =
@@ -216,7 +216,7 @@ let%expect_test _ =
     let res1 = f E
     ;;
     |};
-  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
+  [%expect {| Error: pattern matching failure - the value does not match any pattern. |}]
 ;;
 
 (* ---------------- *)

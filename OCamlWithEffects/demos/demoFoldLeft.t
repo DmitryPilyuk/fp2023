@@ -26,7 +26,6 @@
   > let abs_result = replace_negatives [-1 ; 5 ; -4 ; 3 ; -6 ; -(-(+2)) ; 0]
   > 
   > EOF
-  val Negative : int -> int effect = <effect>
   val fold_left : ('l -> 'f -> 'l) -> 'l -> 'f list -> 'l = <fun>
   val reverse : 't list -> 't list = <fun>
   val lst : int list = [1; 2; 3; 4; 5]
