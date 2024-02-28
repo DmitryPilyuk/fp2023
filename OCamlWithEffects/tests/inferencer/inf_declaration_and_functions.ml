@@ -26,6 +26,22 @@ let%expect_test _ =
   [%expect {| Type error: unbound variable 'x' |}]
 ;;
 
+let%expect_test _ =
+  inference {| let f _ = match [] with | _ -> 0 |};
+  [%expect {| val f : 'a -> int |}]
+;;
+
+let%expect_test _ =
+  inference {| 
+    let f x = x ;;
+    let g x = f x ;;
+    let f = f 5
+  |};
+  [%expect {|
+    val g : 'c -> 'c
+    val f : int |}]
+;;
+
 (* ---------------- *)
 
 (* Rec declarations inference tests *)

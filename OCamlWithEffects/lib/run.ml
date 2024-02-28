@@ -12,11 +12,15 @@ open Interpreter
 open Int_pprint
 
 let parse_with_print code = 
+  (* The 'parse' function converts the result to a string.
+     Used in tests. *)
   (match parse code with
   | Ok ast -> print_parser_result ast
   | Error _ -> print_parser_error syntax_error)
 
 let inference_program ast =
+  (* Here AST is a list of expressions like
+     EDeclaration(_,_,None), ERecDeclaration(_,_,None), EEffectDeclaration _. *)
   let typ =
     match run_program_inferencer ast with
     | Ok (env, names_list) -> print_program_type env names_list
@@ -26,6 +30,7 @@ let inference_program ast =
 ;;
 
 let inference_expr ast =
+  (* Here AST is an arbitrary expression. *)
   let typ =
     match run_expr_inferencer ast with
     | Ok typ -> print_expr_type typ

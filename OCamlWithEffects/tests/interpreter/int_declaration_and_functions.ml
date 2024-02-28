@@ -4,6 +4,7 @@
 
 open Ocaml_with_effects_lib.Run
 
+
 let%expect_test _ =
   interpret
     {| fun x -> x + 1 |};
@@ -20,4 +21,28 @@ let%expect_test _ =
   interpret
     {| (fun x -> x) (fun x -> x + 1) 1 |};
   [%expect {| - : int = 2 |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {| (fun 5 -> 5) 6 |};
+  [%expect {| Pattern matching failure: the value does not match any pattern. |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {| let f x = x in f 4 |};
+  [%expect {| - : int = 4 |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {| let rec f x = x in f 4 |};
+  [%expect {| - : int = 4 |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {| let rec f = 5 |};
+  [%expect {| val f : int = 5 |}]
 ;;

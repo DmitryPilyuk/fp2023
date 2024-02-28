@@ -415,7 +415,7 @@ let parse_bin_op pack =
       ]
   and chainl1 e op =
     let rec go acc =
-      lift2 (fun f x -> EBinaryOperation (f, acc, x)) op e >>= go <|> return acc
+      lift2 (fun f x -> ebinop f acc x) op e >>= go <|> return acc
     in
     e >>= fun init -> go init
   in

@@ -11,8 +11,8 @@ type error =
   | `Unbound_effect of id (* Unreachable after type checking *)
   | `Unbound_handler of id 
   | `Type_error (* Unreachable after type checking *)
-  | `Handler_without_continue of id
-  | `Not_continue_var of id
+  | `Handler_without_continue of id (* Unreachable after type checking *)
+  | `Not_continue_var of id (* Unreachable after type checking *)
   ]
 (* More detailed descriptions of errors can be found in the file int_pprint.ml. *)
 

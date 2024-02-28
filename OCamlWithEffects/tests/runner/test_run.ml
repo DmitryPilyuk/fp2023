@@ -168,3 +168,15 @@ let%expect_test _ =
 ;;
 
 (* ---------------- *)
+
+let%expect_test _ =
+  interpret {| let f = perform |};
+  [%expect {|
+    Syntax error. |}]
+;;
+
+let%expect_test _ =
+  inference {| let f = continue |};
+  [%expect {|
+    Syntax error. |}]
+;;

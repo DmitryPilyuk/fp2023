@@ -4,6 +4,49 @@
 
 open Ocaml_with_effects_lib.Run
 
+(* Const patterns *)
+
+let%expect_test _ =
+  interpret {|
+    let f = true
+
+    let g = 
+      match f with
+      | true -> true
+      | false -> false
+  |};
+  [%expect {|
+    val f : bool = true
+    val g : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {|
+    let f = "str"
+
+    let g = 
+      match f with
+      | "str" -> true
+      | _ -> false
+  |};
+  [%expect {|
+    val f : string = "str"
+    val g : bool = true |}]
+;;
+
+let%expect_test _ =
+  interpret {|
+    let f = ()
+
+    let g = match f with | () -> true
+  |};
+  [%expect {|
+    val f : unit = ()
+    val g : bool = true |}]
+;;
+
+(* ---------------- *)
+
 (* List construction pattern *)
 
 let%expect_test _ =

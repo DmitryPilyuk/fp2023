@@ -83,3 +83,32 @@ interpret
     val res3 : int = 2
     val res4 : int = 5 |}]
 ;;
+
+let%expect_test _ =
+interpret
+    {| 
+      effect E : char -> int effect ;;
+      let k = 4 ;;
+
+      let res = try perform E 'a' with
+      | (E x) l -> continue k x
+      ;;
+
+    |};
+  [%expect {|
+    Type error: variable 'k' is not continue variable. |}]
+;;
+
+let%expect_test _ =
+interpret
+    {| 
+      effect E : int effect ;;
+
+      let f = try perform E with
+      | E k -> continue k 0
+
+    |};
+  [%expect {|
+    val E : int effect = <effect>
+    val f : int = 0 |}]
+;;

@@ -146,6 +146,21 @@ let%expect_test _ =
 let%expect_test _ =
   inference
     {|
+    let f x =
+      match x with
+      | (x, y) -> x + y
+      | _ -> 0
+    ;;
+
+    let res = f ((1,2), (1,2))
+    |};
+  [%expect {|
+    Type error: unification failed - type int does not match expected type int * int |}]
+;;
+
+let%expect_test _ =
+  inference
+    {|
     let f x y z = 
       match (x, y, z) with
       | (a, (b :: d :: l), (j, d, t)) -> 0

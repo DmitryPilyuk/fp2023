@@ -11,6 +11,13 @@ inference
   |};
   [%expect {| val E : int effect |}]
 ;;
+let%expect_test _ =
+inference
+  {|
+    effect E : unit -> int effect
+  |};
+  [%expect {| val E : unit -> int effect |}]
+;;
 
 let%expect_test _ =
 inference
