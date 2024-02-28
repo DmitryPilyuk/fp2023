@@ -1,7 +1,5 @@
   $ dune exec demo << EOF
   > 
-  > effect Negative : int -> int effect ;;
-  > 
   > let rec fold_left f acc l = 
   >   match l with
   >   | [] -> acc
