@@ -28,7 +28,7 @@ let pp_value ppf typ =
     | VEffectDeclaration _ | VEffectWithoutArguments _ | VEffectWithArguments _ ->
       Format.fprintf ppf "<effect>"
     | VEffectContinue _ -> Format.fprintf ppf "<continue>" (* Used only for debugging and test. *)
-    | VThrowingValue _ -> Format.fprintf ppf "thorowing value" (* Used only for debugging and test. *)
+    | VThrowingValue _ -> Format.fprintf ppf "throwing value" (* Used only for debugging and test. *)
   in
   helper ppf typ
 ;;
@@ -47,12 +47,12 @@ let pp_error ppf = function
   | `Handler_without_continue name ->
     Format.fprintf
       ppf
-      "The handler for effect '%s' does not contain the expressions needed to continue."
+      "Error: the handler for effect '%s' does not contain the expressions needed to continue."
       name
   | `Not_continue_var name ->
-    Format.fprintf ppf "Variable '%s' isn't continue variable." name
+    Format.fprintf ppf "Error: variable '%s' isn't continue variable." name
   | `Pattern_matching_failure ->
-    Format.fprintf ppf "Pattern matching failure: the value does not match any pattern."
+    Format.fprintf ppf "Error: pattern matching failure - the value does not match any pattern."
 ;;
 
 let print_interpreter_error e =

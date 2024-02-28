@@ -1,6 +1,7 @@
 # An simulated example that is intended only to demonstrate how you can work with effects with complex types.
 # Doesn't carry any special meaning.
   $ dune exec demo << EOF
+  > 
   > effect E : (int list -> int) -> int effect
   > ;;
   > 

@@ -1,4 +1,5 @@
   $ dune exec demo << EOF
+  > 
   > effect NotDigit: char -> int effect
   > 
   > let int_of_char c = match c with
@@ -14,14 +15,18 @@
   >  | '9' -> 9
   >  | c -> perform (NotDigit c)
   > ;;
+  > 
   > let rec sum_up li = match li with
   >  | [] -> 0
   >  | h :: tl -> int_of_char h + sum_up tl
   > ;;
+  > 
   > let test_l = ['1'; 'a'; '0'; '1'; '5'; '7'; 'v'; '2'; '9']
   > 
-  > let res = try sum_up test_l with
-  >  | (NotDigit x) k -> continue k 0
+  > let res = 
+  >   try sum_up test_l with
+  >   | (NotDigit x) k -> continue k 0
+  > 
   > EOF
   val NotDigit : char -> int effect = <effect>
   val int_of_char : char -> int = <fun>

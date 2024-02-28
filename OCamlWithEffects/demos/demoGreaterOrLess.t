@@ -1,5 +1,6 @@
 # This example does not carry a strong semantic load, but is intended only to demonstrate how the effects work.
   $ dune exec demo << EOF
+  > 
   > effect GreaterThanThousand : int -> int effect ;;
   > effect LessThanThousand : int -> int effect ;;
   > 
@@ -18,6 +19,7 @@
   > let result2 = check 2383
   > let result3 = check 23
   > let result4 = check 0
+  > 
   > EOF
   val GreaterThanThousand : int -> int effect = <effect>
   val LessThanThousand : int -> int effect = <effect>

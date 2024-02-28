@@ -5,37 +5,45 @@
 open Ast
 
 type value =
-  | VInt of int
-  | VBool of bool
-  | VChar of char
-  | VString of string
-  | VUnit
-  | VTuple of value list
-  | VList of value list
-  | VFun of pattern * expr * enviroment
-  | VRecFun of string * value
-  | VEffectDeclaration of string
-  | VEffectWithArguments of string * value
-  | VEffectWithoutArguments of string
-  | VEffectContinue of continue_val
-  | VThrowingValue of value
+  | VInt of int (* 1 *)
+  | VBool of bool (* true *)
+  | VChar of char (* 'c' *)
+  | VString of string (* "hello" *)
+  | VUnit (* () *)
+  | VTuple of value list (* (1,'c', bool) *)
+  | VList of value list (* [1; 3; 4] or (1 :: 2 :: 3 :: [4]) *)
+  | VFun of pattern * expr * enviroment (* fun x -> expr (x) *)
+  | VRecFun of id * value (* let rec f = fun x -> expr (x, f) *)
+  | VEffectDeclaration of id (* effect DevisionByZero : int -> int effect *)
+  | VEffectWithArguments of id * value (* DevisionByZero x *)
+  | VEffectWithoutArguments of id (* DevisionByZero *)
+  | VEffectContinue of
+      continue_val (* continue k 0 - here k is the continuation variable *)
+  | VThrowingValue of value (* continue k 0 - here 0 is the throwing value *)
 
+(* The environment contains the values ​​of let bindings and declared effects. *)
+(* Example: let f = 5 will be presented as (f, VInt 5) *)
 and enviroment = (string, value, Base.String.comparator_witness) Base.Map.t
 
+(* Handlers contain effect handlers for effects that may occur in a given trywith block. *)
 and handlers =
   (string, pattern * expr * continue_val, Base.String.comparator_witness) Base.Map.t
 
-val vint : int -> value
-val vbool : bool -> value
-val vchar : char -> value
-val vstring : string -> value
-val vunit : value
-val vtuple : value list -> value
-val vlist : value list -> value
-val vfun : pattern -> expr -> enviroment -> value
-val vrecfun : string -> value -> value
-val veffect_declaration : string -> value
-val veffect_with_arguments : string -> value -> value
-val veffect_without_arguments : string -> value
-val veffect_continue : continue_val -> value
-val vthrowing_value : value -> value
+(* Constructors for values *)
+
+let vint c = VInt c
+let vbool c = VBool c
+let vchar c = VChar c
+let vstring c = VString c
+let vunit = VUnit
+let vtuple l = VTuple l
+let vlist l = VList l
+let vfun pat exp env = VFun (pat, exp, env)
+let vrecfun ident v = VRecFun (ident, v)
+let veffect_declaration n = VEffectDeclaration n
+let veffect_with_arguments n a = VEffectWithArguments (n, a)
+let veffect_without_arguments n = VEffectWithoutArguments n
+let veffect_continue k = VEffectContinue k
+let vthrowing_value v = VThrowingValue v
+
+(* ---------------- *)

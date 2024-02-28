@@ -1,17 +1,20 @@
   $ dune exec demo << EOF
+  > 
   > effect Negative : int -> int effect ;;
   > 
   > let rec fold_left f acc l = 
-  > match l with
-  >  | [] -> acc
-  >  | h :: tl -> fold_left f (f acc h) tl
+  >   match l with
+  >   | [] -> acc
+  >   | h :: tl -> fold_left f (f acc h) tl
   > ;;
+  > 
   > let reverse l = fold_left (fun acc h -> h :: acc) [] l
   > 
   > let lst = [1; 2; 3; 4; 5]
   > let reverse_res = reverse lst
   > 
-  > let abs_if_negative x = if x < 0 then -x else x ;;
+  > let abs_if_negative x = if x < 0 then -x else x
+  > 
   > let replace_negatives lst =
   >   let replace acc elem =
   >     match elem > 0 with
@@ -23,6 +26,7 @@
   > ;;
   > 
   > let abs_result = replace_negatives [-1 ; 5 ; -4 ; 3 ; -6 ; -(-(+2)) ; 0]
+  > 
   > EOF
   val Negative : int -> int effect = <effect>
   val fold_left : ('l -> 'f -> 'l) -> 'l -> 'f list -> 'l = <fun>
