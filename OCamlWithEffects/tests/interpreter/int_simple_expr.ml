@@ -59,24 +59,28 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let res1 = true && true
     let res2 = true && false
     let res3 = false && false
   |};
-  [%expect {|
+  [%expect
+    {|
     val res1 : bool = true
     val res2 : bool = false
     val res3 : bool = false |}]
 ;;
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let res1 = true || true
     let res2 = true || false
     let res3 = false || false
   |};
-  [%expect {|
+  [%expect
+    {|
     val res1 : bool = true
     val res2 : bool = true
     val res3 : bool = false |}]
@@ -89,7 +93,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {| (1 + 1 < 1 + 1 + 1) && (1 + 1 + 1 > 1 + 1) && (1 + 1 + 1 != 1 + 1) && (1 + 1 <> 1 + 1 + 1)|};
+  interpret
+    {| (1 + 1 < 1 + 1 + 1) && (1 + 1 + 1 > 1 + 1) && (1 + 1 + 1 != 1 + 1) && (1 + 1 <> 1 + 1 + 1)|};
   [%expect {|
   - : bool = true |}]
 ;;
@@ -112,7 +117,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {| "name1" < "name2" && "name2" > "name1" && "name1" = "name1" && "name1" <> "name2" |};
+  interpret
+    {| "name1" < "name2" && "name2" > "name1" && "name1" = "name1" && "name1" <> "name2" |};
   [%expect {|
     - : bool = true |}]
 ;;
@@ -124,19 +130,22 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {| () = () && not (() != ()) && not (() <= () && () >= () && () < () && () > ())|};
+  interpret
+    {| () = () && not (() != ()) && not (() <= () && () >= () && () < () && () > ())|};
   [%expect {|
     - : bool = true |}]
 ;;
 
 let%expect_test _ =
-  interpret {| 'a' = 'a' && 1 = 1 && "name" = "name" && true = true && false = false && () = () |};
+  interpret
+    {| 'a' = 'a' && 1 = 1 && "name" = "name" && true = true && false = false && () = () |};
   [%expect {|
     - : bool = true |}]
 ;;
 
 let%expect_test _ =
-  interpret {| true < true || true > true || not (true <= true && true >= true) || true = false || false <> false |};
+  interpret
+    {| true < true || true > true || not (true <= true && true >= true) || true = false || false <> false |};
   [%expect {|
     - : bool = false |}]
 ;;

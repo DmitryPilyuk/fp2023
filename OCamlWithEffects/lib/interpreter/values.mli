@@ -31,19 +31,19 @@ and handlers =
 
 (* Constructors for values *)
 
-let vint c = VInt c
-let vbool c = VBool c
-let vchar c = VChar c
-let vstring c = VString c
-let vunit = VUnit
-let vtuple l = VTuple l
-let vlist l = VList l
-let vfun pat exp env = VFun (pat, exp, env)
-let vrecfun ident v = VRecFun (ident, v)
-let veffect_declaration n = VEffectDeclaration n
-let veffect_with_arguments n a = VEffectWithArguments (n, a)
-let veffect_without_arguments n = VEffectWithoutArguments n
-let veffect_continue k = VEffectContinue k
-let vthrowing_value v = VThrowingValue v
+val vint : int -> value
+val vbool : bool -> value
+val vchar : char -> value
+val vstring : string -> value
+val vunit : value
+val vtuple : value list -> value
+val vlist : value list -> value
+val vfun : Ast.pattern -> Ast.expr -> enviroment -> value
+val vrecfun : string -> value -> value
+val veffect_declaration : string -> value
+val veffect_with_arguments : string -> value -> value
+val veffect_without_arguments : string -> value
+val veffect_continue : Ast.continue_val -> value
+val vthrowing_value : value -> value
 
 (* ---------------- *)

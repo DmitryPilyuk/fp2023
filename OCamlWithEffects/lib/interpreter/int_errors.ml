@@ -9,7 +9,7 @@ type error =
   | `Pattern_matching_failure
   | `Unbound_variable of id (* Unreachable after type checking *)
   | `Unbound_effect of id (* Unreachable after type checking *)
-  | `Unbound_handler of id 
+  | `Unbound_handler of id
   | `Type_error (* Unreachable after type checking *)
   | `Handler_without_continue of id (* Unreachable after type checking *)
   | `Not_continue_var of id (* Unreachable after type checking *)

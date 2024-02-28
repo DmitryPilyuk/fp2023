@@ -7,16 +7,15 @@ open Ocaml_with_effects_lib.Run
 (* List construction *)
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       5 :: 6
     |};
-  [%expect {| Type error: unification failed - type int does not match expected type int list |}]
+  [%expect
+    {| Type error: unification failed - type int does not match expected type int list |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       let x1 = 5 :: [6]
       let x2 = 5 :: 6 :: []
     |};
@@ -26,11 +25,11 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       5 :: 'c'
     |};
-  [%expect {| Type error: unification failed - type char does not match expected type int list |}]
+  [%expect
+    {| Type error: unification failed - type char does not match expected type int list |}]
 ;;
 
 (* ---------------- *)
@@ -62,16 +61,14 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       (5, 'c', "aaa", true, ())
     |};
   [%expect {| - : int * char * string * bool * unit |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       (1, (1,'a'), "name", 'a', true :: false :: [])
     |};
   [%expect {| - : int * int * char * string * char * bool list |}]

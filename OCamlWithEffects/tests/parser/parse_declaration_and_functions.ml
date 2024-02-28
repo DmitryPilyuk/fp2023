@@ -7,13 +7,13 @@ open Ocaml_with_effects_lib.Run
 (* Let *)
 
 let%expect_test _ =
-   parse_with_print {| let x = (1) |};
+  parse_with_print {| let x = (1) |};
   [%expect {|
     [(EDeclaration ("x", (EConst (Int 1)), None))] |}]
 ;;
 
 let%expect_test _ =
-parse_with_print {| let f x y = x + y 
+  parse_with_print {| let f x y = x + y 
 let main = f 4 6|};
   [%expect
     {|
@@ -31,7 +31,7 @@ let main = f 4 6|};
 ;;
 
 let%expect_test _ =
-   parse_with_print {| let continue = (1) |};
+  parse_with_print {| let continue = (1) |};
   [%expect {|
     Syntax error. |}]
 ;;
@@ -41,7 +41,7 @@ let%expect_test _ =
 (* Let Rec *)
 
 let%expect_test _ =
-parse_with_print {| let rec f x = f (x - 1)|};
+  parse_with_print {| let rec f x = f (x - 1)|};
   [%expect
     {|
     [(ERecDeclaration ("f",
@@ -58,7 +58,7 @@ parse_with_print {| let rec f x = f (x - 1)|};
 (* Let/Let Rec with IN *)
 
 let%expect_test _ =
-parse_with_print{| let f = 
+  parse_with_print {| let f = 
     let x = 5 in
     1 + x * 3
   |};
@@ -75,8 +75,9 @@ parse_with_print{| let f =
 ;;
 
 let%expect_test _ =
-   parse_with_print {| let rec f x = f (x-1) ;; let g = f 5 in g |};
-  [%expect {|
+  parse_with_print {| let rec f x = f (x-1) ;; let g = f 5 in g |};
+  [%expect
+    {|
     [(ERecDeclaration ("f",
         (EFun ((PVal "x"),
            (EApplication ((EIdentifier "f"),
@@ -93,18 +94,18 @@ let%expect_test _ =
 (* Functions and application *)
 
 let%expect_test _ =
-  parse_with_print
-    {| fun x -> x + 1 ;;|};
-  [%expect {|
+  parse_with_print {| fun x -> x + 1 ;;|};
+  [%expect
+    {|
     [(EFun ((PVal "x"),
         (EBinaryOperation (Add, (EIdentifier "x"), (EConst (Int 1))))))
       ] |}]
 ;;
 
 let%expect_test _ =
-  parse_with_print
-    {| (fun x -> x + 1) 10000000 ;;|};
-  [%expect {|
+  parse_with_print {| (fun x -> x + 1) 10000000 ;;|};
+  [%expect
+    {|
     [(EApplication (
         (EFun ((PVal "x"),
            (EBinaryOperation (Add, (EIdentifier "x"), (EConst (Int 1)))))),
@@ -113,16 +114,17 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-parse_with_print
-    {| fun (a :: b) -> a :: b |};
-  [%expect {|
+  parse_with_print {| fun (a :: b) -> a :: b |};
+  [%expect
+    {|
     [(EFun ((PListCons ((PVal "a"), (PVal "b"))),
         (EListCons ((EIdentifier "a"), (EIdentifier "b")))))
       ] |}]
 ;;
 
 let%expect_test _ =
-parse_with_print{|
+  parse_with_print
+    {|
    fun x ->
       (match x with
       | [] -> 0
@@ -140,7 +142,7 @@ parse_with_print{|
 ;;
 
 let%expect_test _ =
-   parse_with_print {| fun x -> match x with | rec -> rec | _ -> 0 |};
+  parse_with_print {| fun x -> match x with | rec -> rec | _ -> 0 |};
   [%expect {|
     Syntax error. |}]
 ;;

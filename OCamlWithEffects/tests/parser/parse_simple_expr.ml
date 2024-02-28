@@ -32,15 +32,13 @@ let%expect_test _ =
 
 let%expect_test _ =
   parse_with_print {| -1 |};
-  [%expect
-    {|
+  [%expect {|
     [(EUnaryOperation (Minus, (EConst (Int 1))))] |}]
 ;;
 
 let%expect_test _ =
   parse_with_print {| not true |};
-  [%expect
-    {|
+  [%expect {|
     [(EUnaryOperation (Not, (EConst (Bool true))))] |}]
 ;;
 

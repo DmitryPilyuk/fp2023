@@ -16,7 +16,7 @@ module type MONAD_ERROR = sig
 end
 
 module Env (M : MONAD_ERROR) = struct
-  (* The environment is map, in which the key is string - 
+  (* The environment is map, in which the key is string -
      the name of the let binding or the name of the effect,
      and the value is the result of the interpreter ('value'). *)
   open M
@@ -45,7 +45,7 @@ module Env (M : MONAD_ERROR) = struct
 end
 
 module Handlers (M : MONAD_ERROR) = struct
-  (* The handlers environment is map, where the key is string - 
+  (* The handlers environment is map, where the key is string -
      the name of the effect, and the value is a tuple of three elements
      - the handler of this effect. *)
   open M
@@ -215,11 +215,11 @@ module Interpreter (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  let eval_handler handler v = 
+  let eval_handler handler v =
     (* Used in perform to match the handler pattern and the effect. *)
     match handler, v with
-    | (p, _, _), VEffectWithoutArguments _
-    | (p, _, _), VEffectWithArguments _ -> eval_pattern p v
+    | (p, _, _), VEffectWithoutArguments _ | (p, _, _), VEffectWithArguments _ ->
+      eval_pattern p v
     | _ -> fail type_error
   ;;
 
@@ -317,11 +317,11 @@ module Interpreter (M : MONAD_ERROR) = struct
           | (pat, expr) :: rest ->
             let* flag, env' = eval_pattern pat v in
             (match flag with
-              | Successful ->
-                let env'' = compose env env' in
-                let* _, result = helper env'' handlers expr in
-                return (env, result)
-              | UnSuccessful -> match_cases env rest)
+             | Successful ->
+               let env'' = compose env env' in
+               let* _, result = helper env'' handlers expr in
+               return (env, result)
+             | UnSuccessful -> match_cases env rest)
         in
         match_cases env cases
       | ETryWith (expr, body) ->
@@ -334,8 +334,7 @@ module Interpreter (M : MONAD_ERROR) = struct
              | EffectHandler (pat, expr, cont) ->
                let* handlers =
                  match pat with
-                 | PEffectWithoutArguments name 
-                 | PEffectWithArguments (name, _) ->
+                 | PEffectWithoutArguments name | PEffectWithArguments (name, _) ->
                    return (extend_handler handlers name (pat, expr, cont))
                  | _ -> fail type_error
                in
@@ -355,42 +354,45 @@ module Interpreter (M : MONAD_ERROR) = struct
           match find env cont with
           | Some (VEffectContinue (Continue n)) when n = cont ->
             return (env, vthrowing_value v) (* Transfer the value. *)
-          | _ -> fail (not_continue_var cont) (* If the variable is not a continuation point. *)
+          | _ -> fail (not_continue_var cont)
+          (* If the variable is not a continuation point. *)
         in
         res
       | EEffectPerform expr ->
-        let* _, v = helper env handlers expr in (* “count” the effect inside perform. *)
+        let* _, v = helper env handlers expr in
+        (* “count” the effect inside perform. *)
         (match v with
          | VEffectWithArguments (name, _) | VEffectWithoutArguments name ->
-           let* _ = find_effect env name in (* Check that the effect is defined. *)
-           let* handler = find_handler handlers name in (* Check that the handler is defined. *)
+           let* _ = find_effect env name in
+           (* Check that the effect is defined. *)
+           let* handler = find_handler handlers name in
+           (* Check that the handler is defined. *)
            let* flag, pat_env = eval_handler handler v in
            let _, expr, cont = handler in
-            (match flag with
-              | Successful ->
-                let new_env = compose env pat_env in
-                let* cont_val =
-                  match cont with
-                  | Continue k -> return k
-                in
-                let new_env = extend new_env cont_val (veffect_continue cont) in (* Set a continuation “point”. *)
-                let* _, v = helper new_env handlers expr in 
-                (match v with
-                | VThrowingValue n -> return (env, n)
-                | _ -> fail (handler_without_continue name))
-                (* Here evaluate the expression in the handler (there should be continue). 
-                   If it throws a value, we return it. If something else,
-                   give an error, since ordinary exceptions are not processed. *)
-              | UnSuccessful -> fail type_error)
+           (match flag with
+            | Successful ->
+              let new_env = compose env pat_env in
+              let* cont_val =
+                match cont with
+                | Continue k -> return k
+              in
+              let new_env = extend new_env cont_val (veffect_continue cont) in
+              (* Set a continuation “point”. *)
+              let* _, v = helper new_env handlers expr in
+              (match v with
+               | VThrowingValue n -> return (env, n)
+               | _ -> fail (handler_without_continue name))
+              (* Here evaluate the expression in the handler (there should be continue).
+                 If it throws a value, we return it. If something else,
+                 give an error, since ordinary exceptions are not processed. *)
+            | UnSuccessful -> fail type_error)
          | _ -> fail type_error)
-
     and list_and_tuple_helper env = function
       | [] -> return (env, [])
       | expr :: rest ->
         let* env, value = helper env empty_handler expr in
         let* env, rest_values = list_and_tuple_helper env rest in
         return (env, value :: rest_values)
-
     and rec_declaration_helper env handlers name expr =
       let* env, v = helper env handlers expr in
       let res =
@@ -400,7 +402,6 @@ module Interpreter (M : MONAD_ERROR) = struct
       in
       let new_env = extend env name res in
       return (new_env, res)
-
     and application_helper flag fun_env pat_env env handlers exp =
       match flag with
       | Successful ->

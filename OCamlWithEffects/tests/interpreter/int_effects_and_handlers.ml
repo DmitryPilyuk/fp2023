@@ -42,7 +42,7 @@ let res = try sum_up test_l with
 ;;
 
 let%expect_test _ =
-interpret
+  interpret
     {| 
       effect E : char -> int effect ;;
       effect G : int -> int effect ;;
@@ -57,7 +57,7 @@ interpret
 ;;
 
 let%expect_test _ =
-interpret
+  interpret
     {| 
       effect E : char -> int effect ;;
       effect G : int -> int effect ;;
@@ -74,7 +74,8 @@ interpret
       let res4 = f (G 26)
 
     |};
-  [%expect {|
+  [%expect
+    {|
     val E : char -> int effect = <effect>
     val G : int -> int effect = <effect>
     val f : 'b effect -> 'b = <fun>
@@ -85,7 +86,7 @@ interpret
 ;;
 
 let%expect_test _ =
-interpret
+  interpret
     {| 
       effect E : char -> int effect ;;
       let k = 4 ;;
@@ -100,7 +101,7 @@ interpret
 ;;
 
 let%expect_test _ =
-interpret
+  interpret
     {| 
       effect E : int effect ;;
 

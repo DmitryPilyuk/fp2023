@@ -18,7 +18,8 @@ let%expect_test _ =
   interpret {| 
     1 :: 'c' :: []
   |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type char does not match expected type int |}]
 ;;
 
@@ -58,7 +59,8 @@ let%expect_test _ =
   interpret {| 
     let f = (1, (1, 2 :: 3 :: 4 :: 5 :: []) , "some string")
   |};
-  [%expect {|
+  [%expect
+    {|
     val f : int * int * int list * string = (1, (1, [2; 3; 4; 5]), "some string") |}]
 ;;
 

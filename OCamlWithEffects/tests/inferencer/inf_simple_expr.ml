@@ -40,40 +40,36 @@ let%expect_test _ =
 (* Binary, unary operations *)
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       1 + 1
     |};
   [%expect {| - : int |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       'a' = 'b'
     |};
   [%expect {| - : bool |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       5 + 'c'
     |};
-  [%expect {| Type error: unification failed - type char does not match expected type int |}]
+  [%expect
+    {| Type error: unification failed - type char does not match expected type int |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       let f x y = x - 1 < y || x > y
     |};
   [%expect {| val f : int -> int -> bool |}]
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       not true && false
     |};
   [%expect {| - : bool |}]
@@ -84,8 +80,7 @@ let%expect_test _ =
 (* If Then Else *)
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       let x = 5
 
       let res = if x > 1 then true else false
@@ -97,14 +92,14 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference
-    {| 
+  inference {| 
       let x = 5
 
       let res = if x > 1 then true else 1
 
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type bool does not match expected type int |}]
 ;;
 

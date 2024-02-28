@@ -5,24 +5,21 @@
 open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
-inference
-  {|
+  inference {|
     effect E : int effect
   |};
   [%expect {| val E : int effect |}]
 ;;
 
 let%expect_test _ =
-inference
-  {|
+  inference {|
     effect E : unit -> int effect
   |};
   [%expect {| val E : unit -> int effect |}]
 ;;
 
 let%expect_test _ =
-inference
-  {|
+  inference {|
     effect E : int
   |};
   [%expect {| Type error: effect E is of type int, but type int effect was expected. |}]
@@ -30,47 +27,48 @@ inference
 
 let%expect_test _ =
   inference
-  {|
+    {|
     effect E : ((int -> bool) -> (char -> string) -> string) -> (int -> bool) effect
   |};
-  [%expect {| val E : ((int -> bool) -> (char -> string) -> string) -> (int -> bool) effect |}]
+  [%expect
+    {| val E : ((int -> bool) -> (char -> string) -> string) -> (int -> bool) effect |}]
 ;;
 
 let%expect_test _ =
   inference
-  {|
+    {|
     effect E : ((int -> bool) -> (char -> string) -> string) -> ((int->bool) -> bool)
   |};
-  [%expect {| Type error: effect E is of type ((int -> bool) -> (char -> string) -> string) -> (int -> bool) -> bool, but type ((int -> bool) -> (char -> string) -> string) -> ((int -> bool) -> bool) effect was expected. |}]
+  [%expect
+    {| Type error: effect E is of type ((int -> bool) -> (char -> string) -> string) -> (int -> bool) -> bool, but type ((int -> bool) -> (char -> string) -> string) -> ((int -> bool) -> bool) effect was expected. |}]
 ;;
 
 let%expect_test _ =
-  inference
-  {|
+  inference {|
     effect E : int * int -> int effect
   |};
   [%expect {| val E : int * int -> int effect |}]
 ;;
 
 let%expect_test _ =
-  inference
-  {|
+  inference {|
     effect E : int * int -> int
   |};
-  [%expect {| Type error: effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
+  [%expect
+    {| Type error: effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
 ;;
 
 let%expect_test _ =
   inference
-  {|
+    {|
     effect E : (((string * char * bool) -> int list) -> (string -> bool * bool) -> int) -> int effect
   |};
-  [%expect {| val E : ((string * char * bool -> int list) -> (string -> bool * bool) -> int) -> int effect |}]
+  [%expect
+    {| val E : ((string * char * bool -> int list) -> (string -> bool * bool) -> int) -> int effect |}]
 ;;
 
 let%expect_test _ =
-  inference
-  {|
+  inference {|
     effect E : (unit * unit * char * int list * bool) effect
   |};
   [%expect {| val E : unit * unit * char * int list * bool effect |}]
@@ -89,7 +87,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int effect ;;
 
     let f = 
@@ -108,36 +107,42 @@ let%expect_test _ =
       | 1 k -> continue k 0
     ;;
   |};
-  [%expect {|
+  [%expect
+    {|
     Type error: left side of effect handler can only contain an effect with continue point. |}]
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int effect ;;
 
     let f = 
       try perform E with
       | (E x) k -> continue k 1
   |};
-  [%expect {|
+  [%expect
+    {|
     Type error: effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int -> int effect ;;
 
     let f = 
       try perform (E 0) with
       | E k -> continue k 1
   |};
-  [%expect {|
+  [%expect
+    {|
     Type error: effect 'E' is an effect that takes an argument, but it's presented without an argument in the handler. |}]
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int -> int effect ;;
 
     let f = 
@@ -149,7 +154,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int -> int effect ;;
 
     let l = 0 ;; 
@@ -163,7 +169,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int -> int effect ;;
 
     let f = 
@@ -175,7 +182,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  inference {| 
+  inference
+    {| 
     effect E : int effect ;;
 
     let f = 0;;
@@ -184,6 +192,7 @@ let%expect_test _ =
       try perform f with
       | E k -> continue k 0
   |};
-  [%expect {|
+  [%expect
+    {|
     Type error: the type of the argument passed to perform must be the effect typ. |}]
 ;;

@@ -7,7 +7,8 @@ open Ocaml_with_effects_lib.Run
 (* Const patterns *)
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f = true
 
     let g = 
@@ -21,7 +22,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f = "str"
 
     let g = 
@@ -50,7 +52,8 @@ let%expect_test _ =
 (* List construction pattern *)
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f x = 
       (match x with
       | [] -> 0
@@ -61,7 +64,8 @@ let%expect_test _ =
     let res2 = f [1 ; 2 ; 3]
     let res3 = f (1 :: 2 :: 3 :: [])
   |};
-  [%expect {|
+  [%expect
+    {|
     val f : int list -> int = <fun>
     val res1 : int = 0
     val res2 : int = 1
@@ -69,7 +73,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f x = 
       (match x with
       | [] -> 0
@@ -86,7 +91,8 @@ let%expect_test _ =
 (* List construction pattern *)
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f x = 
       (match x with
       | (x, 0) -> x
@@ -98,7 +104,8 @@ let%expect_test _ =
     let res2 = f (1, 0)
     let res3 = f (1, 1)
   |};
-  [%expect {|
+  [%expect
+    {|
     val f : int * int -> int = <fun>
     val res1 : int = 0
     val res2 : int = 1
@@ -106,7 +113,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  interpret {|
+  interpret
+    {|
     let f x = 
       (match x with
       | (x, 0) -> x
@@ -136,7 +144,6 @@ let%expect_test _ =
     Pattern matching failure: the value does not match any pattern. |}]
 ;;
 
-
 let%expect_test _ =
   interpret
     {|
@@ -163,7 +170,8 @@ let%expect_test _ =
 
     let res = f (1, (1,2))
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type int list does not match expected type int * int
      |}]
 ;;
@@ -186,7 +194,8 @@ let%expect_test _ =
     let res1 = f E
     let res2 = f G
     |};
-  [%expect {|
+  [%expect
+    {|
     val E : int effect = <effect>
     val G : int effect = <effect>
     val f : int effect -> int = <fun>

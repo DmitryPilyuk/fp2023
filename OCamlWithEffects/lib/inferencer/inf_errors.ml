@@ -14,12 +14,15 @@ type error =
   | `Not_reachable (* Sections of code that will never be reached. *)
   | `Several_bounds of id (* A type variable is assigned more than one constraint. *)
   | `Wrong_effect_typ of id * typ (* The effect type in the ad is not an effect. *)
-  | `Not_effect_with_args of id (* An effect declared without arguments attempts to pass an argument. *)
-  | `Not_effect_without_args of id (* The effect of an argument in handler is described without an argument. *)
+  | `Not_effect_with_args of
+    id (* An effect declared without arguments attempts to pass an argument. *)
+  | `Not_effect_without_args of
+    id (* The effect of an argument in handler is described without an argument. *)
   | `Handler_without_continue (* There is no continuation in the effect handler. *)
   | `Handler_without_effect (* The effect handler does not contain an effect. *)
   | `Perform_with_no_effect (* The argument passed to perform is not an effect. *)
-  | `Not_continue_val of id (* The continuation variable does not actually contain the continuation. *)
+  | `Not_continue_val of
+    id (* The continuation variable does not actually contain the continuation. *)
   ]
 
 (* Constructors for types *)

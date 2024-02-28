@@ -66,11 +66,13 @@ let pp_error ppf = function
       r
   | `Unbound_variable name -> Format.fprintf ppf "Type error: unbound variable '%s'" name
   | `Unbound_effect name -> Format.fprintf ppf "Type error: unbound effect '%s'" name
-  | `Several_bounds name -> Format.fprintf ppf "Type error: variable '%s' is bound several times" name
+  | `Several_bounds name ->
+    Format.fprintf ppf "Type error: variable '%s' is bound several times" name
   | `Handler_without_effect ->
     Format.fprintf
       ppf
-      "Type error: left side of effect handler can only contain an effect with continue point."
+      "Type error: left side of effect handler can only contain an effect with continue \
+       point."
   | `Wrong_effect_typ (name, typ) ->
     let expected_typ =
       match typ with
@@ -93,8 +95,8 @@ let pp_error ppf = function
   | `Not_effect_without_args name ->
     Format.fprintf
       ppf
-      "Type error: effect '%s' is an effect that takes an argument, but it's presented without an \
-       argument in the handler."
+      "Type error: effect '%s' is an effect that takes an argument, but it's presented \
+       without an argument in the handler."
       name
   | `Perform_with_no_effect ->
     Format.fprintf

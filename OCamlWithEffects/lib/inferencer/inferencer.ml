@@ -600,7 +600,7 @@ let infer_expr =
         RList.fold_left body ~init:(return []) ~f:(fun acc handler ->
           let* _, handler_typ = infer_handler env handler in
           match handler_typ with
-          | TContinuation (_, cont_ty) -> 
+          | TContinuation (_, cont_ty) ->
             let* _ = Subst.unify cont_ty typ in
             return acc
           | _ -> return [ handler ])

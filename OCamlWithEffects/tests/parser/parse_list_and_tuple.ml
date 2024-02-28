@@ -8,22 +8,19 @@ open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
   parse_with_print {| [20; 24; 5] |};
-  [%expect
-    {|
+  [%expect {|
     [(EList [(EConst (Int 20)); (EConst (Int 24)); (EConst (Int 5))])] |}]
 ;;
 
 let%expect_test _ =
   parse_with_print {| [] |};
-  [%expect
-    {|
+  [%expect {|
     [(EList [])] |}]
 ;;
 
 let%expect_test _ =
   parse_with_print {| [20; 'c'] |};
-  [%expect
-    {|
+  [%expect {|
     [(EList [(EConst (Int 20)); (EConst (Char 'c'))])] |}]
 ;;
 
@@ -96,9 +93,9 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_with_print {| () |}; (* An empty tuple is not parsed *)
-  [%expect
-    {|
+  parse_with_print {| () |};
+  (* An empty tuple is not parsed *)
+  [%expect {|
     [(EConst Unit)] |}]
 ;;
 

@@ -31,7 +31,7 @@ let%expect_test _ =
 (* Safe division by zero. *)
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {|
    effect DevisionByZero : int effect
 
@@ -86,7 +86,7 @@ parse_with_print
 (* Calculating the sum of a list of numbers represented by symbols using effects. *)
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {| effect NotDigit: char -> int effect
 
     let int_of_char c = match c with
@@ -173,9 +173,9 @@ parse_with_print
 (* Fibonacci *)
 
 let%expect_test _ =
-  parse_with_print
-    {| let rec fib n = if n > 1 then fib (n - 1) + fib (n - 2) else 1;; |};
-  [%expect {|
+  parse_with_print {| let rec fib n = if n > 1 then fib (n - 1) + fib (n - 2) else 1;; |};
+  [%expect
+    {|
     [(ERecDeclaration ("fib",
         (EFun ((PVal "n"),
            (EIfThenElse (

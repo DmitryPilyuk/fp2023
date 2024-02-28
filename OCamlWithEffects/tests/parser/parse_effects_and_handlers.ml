@@ -5,28 +5,23 @@
 open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
-parse_with_print
-    {|
+  parse_with_print {|
     effect E1 : int -> int effect
   |};
-  [%expect
-    {|
+  [%expect {|
     [(EEffectDeclaration ("E1", (AArrow (AInt, (AEffect AInt)))))] |}]
 ;;
 
 let%expect_test _ =
-parse_with_print
-    {|
+  parse_with_print {|
     effect E1 : int -> int -> int effect
   |};
-  [%expect
-    {|
+  [%expect {|
     Syntax error. |}]
 ;;
 
 let%expect_test _ =
-parse_with_print
-    {|
+  parse_with_print {|
     effect E1 : (int -> int) -> int effect
   |};
   [%expect
@@ -37,7 +32,7 @@ parse_with_print
 ;;
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {|
     effect E1 : (int -> (bool -> bool) -> bool -> (string -> (char -> bool) -> string) -> string) -> bool effect
   |};
@@ -61,8 +56,7 @@ parse_with_print
 ;;
 
 let%expect_test _ =
-parse_with_print
-    {|
+  parse_with_print {|
     effect E1 : (int -> (char -> bool) -> string) effect
   |};
   [%expect
@@ -73,7 +67,7 @@ parse_with_print
 ;;
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {|
     effect E1 : (int -> string -> char) -> (int -> (char -> bool) -> string) effect
   |};
@@ -88,21 +82,19 @@ parse_with_print
 ;;
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {|
     try perform E1 x with
     | E (a :: b) k -> continue k 0
     | E (a :: b :: c) k -> continue k 1
     | E x -> continue k 2
   |};
-  [%expect
-    {|
+  [%expect {|
     Syntax error. |}]
 ;;
 
 let%expect_test _ =
-parse_with_print
-    {|
+  parse_with_print {|
     let f1 = perform E
     let f2 = perform E x
   |};
@@ -115,7 +107,7 @@ parse_with_print
 ;;
 
 let%expect_test _ =
-parse_with_print
+  parse_with_print
     {|
     effect E1 : int -> int effect
     effect E2 : int -> int effect

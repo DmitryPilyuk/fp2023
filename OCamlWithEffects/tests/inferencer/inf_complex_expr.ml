@@ -7,8 +7,8 @@ open Ocaml_with_effects_lib.Run
 (* Without effects *)
 
 let%expect_test _ =
-inference
-  {|
+  inference
+    {|
     let g x = if x = 0 || x = 1 then true else false ;;
 
     let f x =

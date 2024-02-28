@@ -40,7 +40,8 @@ let%expect_test _ =
     
     let res = f [true ; false ; true ; false ; true]
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type int does not match expected type bool |}]
 ;;
 
@@ -154,7 +155,8 @@ let%expect_test _ =
 
     let res = f ((1,2), (1,2))
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type int does not match expected type int * int |}]
 ;;
 
@@ -175,8 +177,8 @@ let%expect_test _ =
 (* Effects patterns *)
 
 let%expect_test _ =
-    inference
-      {|
+  inference
+    {|
       effect E : char * int * string -> int effect
   
       let f x = 
@@ -185,14 +187,15 @@ let%expect_test _ =
         | _ -> 'a'
       ;;
       |};
-    [%expect {|
+  [%expect
+    {|
       val E : char * int * string -> int effect
       val f : (char * int * string -> int effect) -> char |}]
 ;;
 
 let%expect_test _ =
-    inference
-      {|
+  inference
+    {|
       effect E : char * int * string -> int effect
   
       let f x = 
@@ -201,7 +204,7 @@ let%expect_test _ =
         | _ -> 'a'
       ;;
       |};
-    [%expect {|
+  [%expect {|
       Type error: variable 'x' is bound several times |}]
 ;;
 
@@ -248,13 +251,14 @@ let%expect_test _ =
       | _ -> 0
     ;;
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: unification failed - type 'c list does not match expected type int |}]
 ;;
 
 let%expect_test _ =
-    inference
-      {|
+  inference
+    {|
       effect E : int list -> int effect
   
       let f x = 
@@ -263,13 +267,13 @@ let%expect_test _ =
         | _ -> 0
       ;;
       |};
-    [%expect {|
+  [%expect {|
       Type error: variable 'x' is bound several times |}]
 ;;
 
 let%expect_test _ =
-    inference
-      {|
+  inference
+    {|
       effect E : int list -> int effect
   
       let f x = 
@@ -278,12 +282,13 @@ let%expect_test _ =
         | _ -> 0
       ;;
       |};
-    [%expect {|
+  [%expect
+    {|
       val E : int list -> int effect
       val f : (int list -> int effect) -> int |}]
-  ;;
+;;
 
-  let%expect_test _ =
+let%expect_test _ =
   inference
     {|
     effect E : int effect
@@ -294,7 +299,8 @@ let%expect_test _ =
       | _ -> 0
     ;;
     |};
-  [%expect {|
+  [%expect
+    {|
     Type error: effect 'E' cannot take arguments - it is an effect without arguments. |}]
 ;;
 

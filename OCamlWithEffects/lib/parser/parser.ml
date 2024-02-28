@@ -193,7 +193,7 @@ let parse_tuple_type p_type =
 let parse_list_type p_type = lift alist (p_type <* skip_wspace <* string "list")
 let parse_effect_type p_type = lift aeffect (p_type <* skip_wspace <* string "effect")
 
-let simple_type_parsers self = 
+let simple_type_parsers self =
   let parse_t = parse_prim_type self in
   let parse_t = parse_list_type parse_t <|> parse_t in
   let parse_t = parse_effect_type parse_t <|> parse_t in
@@ -201,36 +201,30 @@ let simple_type_parsers self =
   parse_t
 ;;
 
-let parse_simple_type =
-  fix
-  @@ fun self ->
-    skip_wspace
-    *> simple_type_parsers self
-;;
+let parse_simple_type = fix @@ fun self -> skip_wspace *> simple_type_parsers self
 
 let parse_function_type =
-  fix
-  @@ fun self ->
-    skip_wspace
-    *>
-    chainr1 (simple_type_parsers self) parse_arrow_type
+  fix @@ fun self -> skip_wspace *> chainr1 (simple_type_parsers self) parse_arrow_type
 ;;
 
-let parse_hard_effect_type = parens(parse_function_type) <* skip_wspace <* string "effect" >>| aeffect (* (arrow) effect *)
+let parse_hard_effect_type =
+  parens parse_function_type
+  <* skip_wspace
+  <* string "effect"
+  >>| aeffect (* (arrow) effect *)
+;;
 
 let parse_type_annotation =
-
   let parse_effect_with_args_type =
-  lift2
-  aarrow
-  (parens (parse_function_type) <|> parse_simple_type)
-  (arrow *> skip_wspace *> (parse_simple_type <|> parse_hard_effect_type <|> parens(parse_function_type)))
+    lift2
+      aarrow
+      (parens parse_function_type <|> parse_simple_type)
+      (arrow
+       *> skip_wspace
+       *> (parse_simple_type <|> parse_hard_effect_type <|> parens parse_function_type))
   in
-
-  let parse_effect_without_args_type = parse_simple_type <|> parse_function_type in 
-
-parse_effect_with_args_type <|> parse_effect_without_args_type
-
+  let parse_effect_without_args_type = parse_simple_type <|> parse_function_type in
+  parse_effect_with_args_type <|> parse_effect_without_args_type
 ;;
 
 (* ---------------- *)
@@ -311,7 +305,10 @@ let parse_try_with pack =
   in
   skip_wspace
   *> string "try"
-  *> lift2 etry_with ((parens (parse_expr) <|> parse_expr) <* skip_wspace <* string "with") (many1 parse_case)
+  *> lift2
+       etry_with
+       (parens parse_expr <|> parse_expr <* skip_wspace <* string "with")
+       (many1 parse_case)
 ;;
 
 let parse_perform pack =
@@ -445,9 +442,7 @@ let parse_bin_op pack =
       ; parse_ident
       ]
   and chainl1 e op =
-    let rec go acc =
-      lift2 (fun f x -> ebinop f acc x) op e >>= go <|> return acc
-    in
+    let rec go acc = lift2 (fun f x -> ebinop f acc x) op e >>= go <|> return acc in
     e >>= fun init -> go init
   in
   List.fold_left
