@@ -606,6 +606,7 @@ let parse_declaration pack =
       ; pack.parse_fun pack
       ; pack.parse_let_in pack
       ; pack.parse_perform pack
+      ; pack.parse_continue pack
       ; pack.parse_match_with pack
       ; pack.parse_try_with pack
       ; pack.parse_effect_with_arguments pack
@@ -649,6 +650,7 @@ let parse_let_in pack =
       ; pack.parse_application pack
       ; pack.parse_fun pack
       ; pack.parse_perform pack
+      ; pack.parse_continue pack
       ; pack.parse_match_with pack
       ; pack.parse_try_with pack
       ; parse_effect_without_arguments
