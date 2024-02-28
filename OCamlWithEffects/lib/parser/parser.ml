@@ -311,7 +311,7 @@ let parse_try_with pack =
   in
   skip_wspace
   *> string "try"
-  *> lift2 etry_with (parse_expr <* skip_wspace <* string "with") (many1 parse_case)
+  *> lift2 etry_with ((parens (parse_expr) <|> parse_expr) <* skip_wspace <* string "with") (many1 parse_case)
 ;;
 
 let parse_perform pack =
