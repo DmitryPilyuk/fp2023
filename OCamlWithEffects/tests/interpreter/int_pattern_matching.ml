@@ -136,6 +136,38 @@ let%expect_test _ =
     Pattern matching failure: the value does not match any pattern. |}]
 ;;
 
+
+let%expect_test _ =
+  interpret
+    {|
+    let f x = 
+      match x with
+      | (x, y :: z) -> x + y
+    ;;
+
+    let res = f (1, [2])
+    |};
+  [%expect {|
+    val f : int * int list -> int = <fun>
+    val res : int = 3
+     |}]
+;;
+
+let%expect_test _ =
+  interpret
+    {|
+    let f x = 
+      match x with
+      | (x, y :: z :: q) -> x + y + z
+    ;;
+
+    let res = f (1, (1,2))
+    |};
+  [%expect {|
+    Type error: unification failed - type int list does not match expected type int * int
+     |}]
+;;
+
 (* ---------------- *)
 
 (* Effect patterns *)
