@@ -305,14 +305,6 @@ let annotation_to_type =
   helper
 ;;
 
-(* Converts an annotation to a curried representation:
-   from AArrow(AArow(AInt, ABool), AChar) to AArow(AInt, AArrow(ABool, AChar)) *)
-let rec curry_tarr = function
-  | AArrow (AArrow (left, inner), right) ->
-    AArrow (left, curry_tarr (AArrow (inner, right)))
-  | typ -> typ
-;;
-
 let check_unique_vars pattern =
   (* Checks that all variables in the pattern are unique.
      Used to detect severeal bound errors in tuple patterns,
@@ -520,8 +512,7 @@ let infer_expr =
         match annot with
         | AEffect _ as a -> return (annotation_to_type a) (* Effect without args. *)
         | AArrow (l, r) ->
-          let curr_l = curry_tarr l in
-          let l_ty = annotation_to_type curr_l in
+          let l_ty = annotation_to_type l in
           let r_ty = annotation_to_type r in
           let ty = l_ty @-> r_ty in
           (match r_ty with

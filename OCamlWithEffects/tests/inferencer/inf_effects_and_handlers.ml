@@ -11,6 +11,7 @@ inference
   |};
   [%expect {| val E : int effect |}]
 ;;
+
 let%expect_test _ =
 inference
   {|
@@ -30,17 +31,17 @@ inference
 let%expect_test _ =
   inference
   {|
-    effect E : (int -> bool) -> (char -> string) -> (int->bool) effect
+    effect E : ((int -> bool) -> (char -> string) -> string) -> (int -> bool) effect
   |};
-  [%expect {| val E : (int -> bool -> char -> string) -> (int -> bool) effect |}]
+  [%expect {| val E : ((int -> bool) -> (char -> string) -> string) -> (int -> bool) effect |}]
 ;;
 
 let%expect_test _ =
   inference
   {|
-    effect E : (int -> bool) -> (char -> string) -> (int->bool)
+    effect E : ((int -> bool) -> (char -> string) -> string) -> ((int->bool) -> bool)
   |};
-  [%expect {| Type error: effect E is of type (int -> bool -> char -> string) -> int -> bool, but type (int -> bool -> char -> string) -> (int -> bool) effect was expected. |}]
+  [%expect {| Type error: effect E is of type ((int -> bool) -> (char -> string) -> string) -> (int -> bool) -> bool, but type ((int -> bool) -> (char -> string) -> string) -> ((int -> bool) -> bool) effect was expected. |}]
 ;;
 
 let%expect_test _ =
@@ -57,6 +58,22 @@ let%expect_test _ =
     effect E : int * int -> int
   |};
   [%expect {| Type error: effect E is of type int * int -> int, but type int * int -> int effect was expected. |}]
+;;
+
+let%expect_test _ =
+  inference
+  {|
+    effect E : (((string * char * bool) -> int list) -> (string -> bool * bool) -> int) -> int effect
+  |};
+  [%expect {| val E : ((string * char * bool -> int list) -> (string -> bool * bool) -> int) -> int effect |}]
+;;
+
+let%expect_test _ =
+  inference
+  {|
+    effect E : (unit * unit * char * int list * bool) effect
+  |};
+  [%expect {| val E : unit * unit * char * int list * bool effect |}]
 ;;
 
 let%expect_test _ =

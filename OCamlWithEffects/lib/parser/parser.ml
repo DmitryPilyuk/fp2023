@@ -173,15 +173,15 @@ let parse_pattern =
 let parse_prim_type p_type =
   choice
     [ parens p_type
-    ; skip_wspace *> string "int" *> return AInt
-    ; skip_wspace *> string "bool" *> return ABool
-    ; skip_wspace *> string "char" *> return AChar
-    ; skip_wspace *> string "string" *> return AString
-    ; skip_wspace *> string "unit" *> return AUnit
+    ; skip_wspace *> string "int" *> return aint
+    ; skip_wspace *> string "bool" *> return abool
+    ; skip_wspace *> string "char" *> return achar
+    ; skip_wspace *> string "string" *> return astring
+    ; skip_wspace *> string "unit" *> return aunit
     ]
 ;;
 
-let parse_arrow_type = skip_wspace *> string "->" *> return (fun t1 t2 -> aarrow t1 t2)
+let parse_arrow_type = arrow *> return (fun t1 t2 -> aarrow t1 t2)
 
 let parse_tuple_type p_type =
   lift2
@@ -193,16 +193,44 @@ let parse_tuple_type p_type =
 let parse_list_type p_type = lift alist (p_type <* skip_wspace <* string "list")
 let parse_effect_type p_type = lift aeffect (p_type <* skip_wspace <* string "effect")
 
-let parse_type_annotation =
-  fix
-  @@ fun self ->
-  skip_wspace
-  *>
+let simple_type_parsers self = 
   let parse_t = parse_prim_type self in
   let parse_t = parse_list_type parse_t <|> parse_t in
   let parse_t = parse_effect_type parse_t <|> parse_t in
   let parse_t = parse_tuple_type parse_t <|> parse_t in
-  chainl1 parse_t parse_arrow_type
+  parse_t
+;;
+
+let parse_simple_type =
+  fix
+  @@ fun self ->
+    skip_wspace
+    *> simple_type_parsers self
+;;
+
+let parse_function_type =
+  fix
+  @@ fun self ->
+    skip_wspace
+    *>
+    chainr1 (simple_type_parsers self) parse_arrow_type
+;;
+
+let parse_hard_effect_type = parens(parse_function_type) <* skip_wspace <* string "effect" >>| aeffect (* (arrow) effect *)
+
+let parse_type_annotation =
+
+  let parse_effect_with_args_type =
+  lift2
+  aarrow
+  (parens (parse_function_type) <|> parse_simple_type)
+  (arrow *> skip_wspace *> (parse_simple_type <|> parse_hard_effect_type <|> parens(parse_function_type)))
+  in
+
+  let parse_effect_without_args_type = parse_simple_type <|> parse_function_type in 
+
+parse_effect_with_args_type <|> parse_effect_without_args_type
+
 ;;
 
 (* ---------------- *)

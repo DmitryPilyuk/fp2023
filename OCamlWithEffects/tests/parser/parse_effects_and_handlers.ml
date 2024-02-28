@@ -17,6 +17,79 @@ parse_with_print
 let%expect_test _ =
 parse_with_print
     {|
+    effect E1 : int -> int -> int effect
+  |};
+  [%expect
+    {|
+    Syntax error. |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    effect E1 : (int -> int) -> int effect
+  |};
+  [%expect
+    {|
+    [(EEffectDeclaration ("E1", (AArrow ((AArrow (AInt, AInt)), (AEffect AInt)))
+        ))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    effect E1 : (int -> (bool -> bool) -> bool -> (string -> (char -> bool) -> string) -> string) -> bool effect
+  |};
+  [%expect
+    {|
+    [(EEffectDeclaration ("E1",
+        (AArrow (
+           (AArrow (AInt,
+              (AArrow ((AArrow (ABool, ABool)),
+                 (AArrow (ABool,
+                    (AArrow (
+                       (AArrow (AString,
+                          (AArrow ((AArrow (AChar, ABool)), AString)))),
+                       AString))
+                    ))
+                 ))
+              )),
+           (AEffect ABool)))
+        ))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    effect E1 : (int -> (char -> bool) -> string) effect
+  |};
+  [%expect
+    {|
+    [(EEffectDeclaration ("E1",
+        (AEffect (AArrow (AInt, (AArrow ((AArrow (AChar, ABool)), AString)))))))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
+    effect E1 : (int -> string -> char) -> (int -> (char -> bool) -> string) effect
+  |};
+  [%expect
+    {|
+    [(EEffectDeclaration ("E1",
+        (AArrow ((AArrow (AInt, (AArrow (AString, AChar)))),
+           (AEffect (AArrow (AInt, (AArrow ((AArrow (AChar, ABool)), AString)))))
+           ))
+        ))
+      ] |}]
+;;
+
+let%expect_test _ =
+parse_with_print
+    {|
     try perform E1 x with
     | E (a :: b) k -> continue k 0
     | E (a :: b :: c) k -> continue k 1
