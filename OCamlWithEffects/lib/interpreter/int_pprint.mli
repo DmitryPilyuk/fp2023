@@ -4,7 +4,6 @@
 
 open Values
 open Typedtree
-open Inf_pprint
 
 val print_interpreter_error
   :  [< `Division_by_zero
@@ -18,10 +17,10 @@ val print_interpreter_error
      ]
   -> unit
 
-val print_expr_value : value -> Typedtree.typ -> unit
+val print_expr_value : value -> typ -> unit
 
 val print_program_value
   :  (string, value, 'a) Base.Map.t
-  -> (string, Typedtree.scheme, 'b) Base.Map.t
+  -> (string, scheme, 'b) Base.Map.t
   -> string list
   -> unit
