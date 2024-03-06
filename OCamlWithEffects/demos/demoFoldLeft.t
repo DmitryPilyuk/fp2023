@@ -1,4 +1,4 @@
-  $ dune exec demo << EOF
+  $ ./demo.exe << EOF
   > 
   > let rec fold_left f acc l = 
   >   match l with

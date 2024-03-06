@@ -1,10 +1,10 @@
 # An simulated example that is intended only to demonstrate how you can work with effects with complex types.
 # Doesn't carry any special meaning.
-  $ dune exec demo << EOF
-  >
+  $ ./demo.exe << EOF
+  > 
   > effect E : (int list -> int) -> int effect
   > ;;
-  >
+  > 
   > let list_sum lt =
   >   let rec helper acc lt =
   >     match lt with
@@ -12,17 +12,17 @@
   >     | hd :: tl -> helper (acc + hd) tl
   >   in helper 0 lt
   > ;;
-  >
+  > 
   > let list_sum_with_effect int_list =
   >   try perform E list_sum with
   >   | (E f) k ->
   >     let res = f int_list in
   >     continue k res
   > ;;
-  >
+  > 
   > let result1 = list_sum_with_effect [1 ; 2 ; 3 ; 4 ; 5]
   > let result2 = list_sum_with_effect (1 :: 1 :: 1 :: 1 :: 1 :: [])
-  >
+  > 
   > EOF
   val E : (int list -> int) -> int effect = <effect>
   val list_sum : int list -> int = <fun>
@@ -34,3 +34,4 @@
   >  let exp = try perform E with
   >    | E k -> continue k 10 + continue k 10;;
   > EOF
+  Syntax error.
