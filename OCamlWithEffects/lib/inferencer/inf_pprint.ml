@@ -19,26 +19,23 @@ let pp_type ppf typ =
       let var_name = Char.chr (Char.code 'a' + v) in
       Format.fprintf ppf "'%c" var_name
     | TArr (l, r) ->
-      let pp =
-        match l with
-        | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" helper l helper r
-        | _ -> Format.fprintf ppf "%a -> %a" helper l helper r
-      in
-      pp
+      (match l with
+      | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" helper l helper r
+      | _ -> Format.fprintf ppf "%a -> %a" helper l helper r)
     | TList t ->
-      let pp =
-        match t with
-        | TArr (_, _) -> Format.fprintf ppf "(%a) list" helper t
-        | _ -> Format.fprintf ppf "%a list" helper t
-      in
-      pp
+      (match t with
+      | TArr (_, _) -> Format.fprintf ppf "(%a) list" helper t
+      | _ -> Format.fprintf ppf "%a list" helper t)
     | TTuple tl ->
       Format.fprintf
         ppf
         "%a"
         (Format.pp_print_list
            ~pp_sep:(fun ppf () -> Format.fprintf ppf " * ")
-           (fun ppf ty -> helper ppf ty))
+           (fun ppf ty -> 
+            (match ty with
+            | TTuple _ | TArr _ -> Format.fprintf ppf "(%a)" helper ty
+            | _ -> helper ppf ty)))
         tl
     | TEffect (TArr (_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t

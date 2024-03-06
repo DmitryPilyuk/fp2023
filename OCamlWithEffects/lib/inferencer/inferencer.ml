@@ -105,7 +105,7 @@ module Type = struct
       | TVar n -> TVarSet.add n acc
       | TArr (left, right) -> helper (helper acc left) right
       | TList typ -> helper acc typ
-      | TTuple typ_list -> List.fold_left (fun acc item -> helper acc item) acc typ_list
+      | TTuple typ_list -> List.fold_left helper acc typ_list
       | TEffect typ -> helper acc typ
       | TPrim _ -> acc
       | _ -> acc
