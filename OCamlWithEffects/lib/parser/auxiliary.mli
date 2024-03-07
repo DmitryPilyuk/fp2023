@@ -1,10 +1,15 @@
 (** Copyright 2021-2024, DmitryPilyuk and raf-nr *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open Ast
+
 type ast_type =
   | DeclarationList
   | MixedList
   | FreeExpression
+
+val determine_ast_type : program -> ast_type
 
 val is_keyword : string -> bool
 val is_whitespace : char -> bool

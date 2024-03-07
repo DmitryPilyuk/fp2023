@@ -9,31 +9,26 @@ open Angstrom
 
 type ast_type =
   | DeclarationList
-    (* [EDeclaration(...), ERecDeclaration(...), EFfectDeclaration(...)] *)
-  | MixedList (* [EDeclaration(...), EBinaryOperation(...)]*)
-  | FreeExpression (* UnaryOperation(...) *)
+    (* [SDeclaration (...) ; SDeclaration (...) ; SDeclaration (...)] *)
+  | MixedList (* [SDeclaration (...) ; SExpression (...)]*)
+  | FreeExpression (* SExpression (...) *)
 
 (* This function, given an ast, determines whether ast is a program (a list of declarations),
    a free expression, or a list containing arbitrary expressions. *)
-(*let determine_ast_type ast =
+let determine_ast_type ast =
   match ast with
-  | [ expr ] ->
-  (match expr with
-  | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _ ->
-  DeclarationList
-  | _ -> FreeExpression)
+  | [ SExpression _ ] -> FreeExpression
   | _ ->
-  let rec helper = function
-  | [] -> DeclarationList
-  | hd :: tl ->
-  (match hd with
-  | EDeclaration (_, _, None) | ERecDeclaration (_, _, None) | EEffectDeclaration _
-  -> helper tl
-  | _ -> MixedList)
-  in
-  helper ast
+    let rec helper = function
+    | [] -> DeclarationList
+    | hd :: tl ->
+      (match hd with
+      | SDeclaration _ -> helper tl
+      | _ -> MixedList)
+    in
+    helper ast
   ;;
-*)
+
 (* ---------------- *)
 
 (* Helper functions for parsing *)
