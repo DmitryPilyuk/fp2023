@@ -398,6 +398,7 @@ let parse_un_op pack =
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_if_then_else pack
       ; parens @@ pack.parse_perform pack
+      ; parens @@ pack.parse_continue pack
       ; parse_const
       ; parse_ident
       ; parens @@ pack.parse_bin_op pack
@@ -410,6 +411,7 @@ let parse_un_op pack =
       ; parens @@ pack.parse_application pack
       ; parens @@ pack.parse_if_then_else pack
       ; parens @@ pack.parse_perform pack
+      ; parens @@ pack.parse_continue pack
       ; parse_const
       ; parse_ident
       ]
@@ -437,6 +439,7 @@ let parse_bin_op pack =
       ; pack.parse_let_in pack
       ; pack.parse_match_with pack
       ; pack.parse_perform pack
+      ; pack.parse_continue pack
       ; pack.parse_if_then_else pack
       ; parse_const
       ; parse_ident

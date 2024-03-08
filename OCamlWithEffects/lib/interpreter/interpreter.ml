@@ -375,7 +375,7 @@ module Interpreter (M : MONAD_ERROR) = struct
               (* Here evaluate the expression in the handler (there should be continue).
                  If it throws a value, we return it. If something else,
                  give an error, since ordinary exceptions are not processed. *)
-            | UnSuccessful -> fail type_error)
+            | UnSuccessful -> fail pattern_matching_failure)
          | _ -> fail type_error)
     and list_and_tuple_helper env = function
       | [] -> return (env, [])

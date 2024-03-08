@@ -284,9 +284,10 @@ let lookup_env env name =
     return (Subst.empty, ty)
     (* An empty substitution is needed here only for type matching. *)
   | None ->
-    (match is_upper name.[0] with
-     | true -> fail (unbound_effect name)
-     | false -> fail (unbound_variable name))
+    if is_upper name.[0] then
+      fail (unbound_effect name)
+    else
+      fail (unbound_variable name)
 ;;
 
 let annotation_to_type =
@@ -305,22 +306,17 @@ let annotation_to_type =
   helper
 ;;
 
-let update_name_list name names_list =
-  (* Used to preserve the order of let declarations and effect declarations. *)
-  if List.mem name names_list then 
-    name :: List.filter (( <> ) name) names_list
-  else name :: names_list
-
 let check_unique_vars pattern =
   (* Checks that all variables in the pattern are unique.
      Used to detect severeal bound errors in tuple patterns,
      list constructor patterns, and effects with arguments. *)
   let rec helper var_set = function
     | PVal v ->
-      (match VarSet.mem v var_set with
-       (* If at least one variable is found twice, we raise an error. *)
-       | true -> fail (several_bounds v)
-       | false -> return (VarSet.add v var_set))
+      if VarSet.mem v var_set then
+        (* If at least one variable is found twice, we raise an error. *)
+        fail (several_bounds v)
+      else
+        return (VarSet.add v var_set)
     | PAny -> return var_set
     | PNill -> return var_set
     | PConst _ -> return var_set
@@ -579,7 +575,7 @@ let infer_expr =
         RList.fold_left body ~init:(return []) ~f:(fun acc handler ->
           let* _, handler_typ = infer_handler env handler in
           match handler_typ with
-          | TContinuation (_, cont_ty) ->
+          | TContinuation (cont_ty) ->
             let* _ = Subst.unify cont_ty typ in
             return acc
           | _ -> return [ handler ])
@@ -598,7 +594,7 @@ let infer_expr =
           | TContinuePoint ->
             let* sub2, ty_expr = helper env expr in
             let* sub = Subst.compose sub1 sub2 in
-            return (sub, tcontinuation typ ty_expr)
+            return (sub, tcontinuation ty_expr)
           | _ -> fail (not_continue_val k)))
     | EEffectPerform expr ->
       let* sub1, ty1 = helper env expr in
@@ -649,6 +645,9 @@ let infer_expr =
   in
   helper
 ;;
+
+let update_name_list name names_list = name :: List.filter (( <> ) name) names_list
+(* Add a new name to the beginning of the list. If it is already there, delete it and add it to the beginning. *)
 
 let infer_program env program =
   (* Go through the list and take turns making expressions.

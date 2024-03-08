@@ -39,8 +39,8 @@ let pp_type ppf typ =
         tl
     | TEffect (TArr (_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t
-    | TContinuation (a, l) ->
-      Format.fprintf ppf "continuation %a %a" helper a helper l
+    | TContinuation l ->
+      Format.fprintf ppf "continuation %a" helper l
       (* Unreachable, used artificially for debugging *)
     | TContinuePoint ->
       Format.fprintf
@@ -115,8 +115,9 @@ let expr_with_name name typ = String.concat " " [ "val"; name; ":"; type_to_stri
 let print_expr_type typ = Format.printf "%s\n" (expr_without_name typ)
 
 let print_program_type env names_list =
-  Base.List.iter names_list ~f:(fun name ->
-    match Base.Map.find env name with
-    | Some (Scheme (_, typ)) -> Format.printf "%s\n" (expr_with_name name typ)
-    | _ -> Format.printf "")
+  Base.List.iter 
+    names_list 
+    ~f:(fun name ->
+      let (Scheme (_, ty)) = Base.Map.find_exn env name in
+      Format.printf "%s\n" (expr_with_name name ty))
 ;;
