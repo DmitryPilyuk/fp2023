@@ -52,7 +52,6 @@ let pp_type ppf typ =
 
 let pp_error ppf = function
   | `Occurs_check -> Format.fprintf ppf "Type error: occurs check failed."
-  | `Not_reachable -> Format.fprintf ppf "Not reachable."
   | `Unification_failed (l, r) ->
     Format.fprintf
       ppf

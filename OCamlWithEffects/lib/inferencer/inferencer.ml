@@ -695,7 +695,8 @@ let infer_program env program =
               let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
               let new_names_list = update_name_list name acc_names in
               helper (return (new_acc, new_names_list)) tl)
-        | _ -> fail not_reachable)
+        | SExpression expr ->
+          let* _, _ = infer_expr acc_env expr in acc)
   in
   (* Start *)
   let* env, names = helper (return (env, [])) program in
