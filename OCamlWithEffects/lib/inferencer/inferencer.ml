@@ -661,10 +661,19 @@ let infer_program env program =
       (match hd with
         | SDeclaration decl ->
             (match decl with
-            | DDeclaration (name, expr)
-            | DRecDeclaration (name, expr) ->
+            | DDeclaration (name, expr) -> 
               let* _, ty = infer_expr acc_env expr in
-              let new_acc = TypeEnv.extend env name (Scheme (TVarSet.empty, ty)) in
+              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
+              let new_names_list = update_name_list name acc_names in
+              helper (return (new_acc, new_names_list)) tl
+            | DRecDeclaration (name, expr) ->
+              let* fv = fresh_var in
+              let env2 = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, fv)) in
+              let* sub1, ty1 = infer_expr env2 expr in
+              let* sub2 = Subst.unify ty1 fv in
+              let* sub3 = Subst.compose sub1 sub2 in
+              let ty3 = Subst.apply sub3 fv in
+              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty3)) in
               let new_names_list = update_name_list name acc_names in
               helper (return (new_acc, new_names_list)) tl
             | DEffectDeclaration (name, annot) ->
@@ -683,7 +692,7 @@ let infer_program env program =
                   let ty = annotation_to_type annot in
                   fail (wrong_effect_type name ty)
               in
-              let new_acc = TypeEnv.extend env name (Scheme (TVarSet.empty, ty)) in
+              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
               let new_names_list = update_name_list name acc_names in
               helper (return (new_acc, new_names_list)) tl)
         | _ -> fail not_reachable)
