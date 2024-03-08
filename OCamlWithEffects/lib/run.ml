@@ -2,14 +2,15 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Ast
 open Auxiliary
 open Parser
 open Parser_errors
 open Parser_pprint
 open Inferencer
 open Inf_pprint
-open Interpreter
-open Int_pprint
+(* open Interpreter
+open Int_pprint *)
 
 let parse_with_print code =
   (* The 'parse' function converts the result to a string.
@@ -20,8 +21,7 @@ let parse_with_print code =
 ;;
 
 let inference_program ast =
-  (* Here AST is a list of expressions like
-     EDeclaration(_,_,None), ERecDeclaration(_,_,None), EEffectDeclaration _. *)
+  (* Here AST is a list of SDeclarations. *)
   let typ =
     match run_program_inferencer ast with
     | Ok (env, names_list) -> print_program_type env names_list
@@ -49,7 +49,7 @@ let inference program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> inference_expr x
+          | [ SExpression e ] -> inference_expr e
           | _ -> print_parser_error syntax_error)
        | DeclarationList -> inference_program ast
        | MixedList -> print_parser_error syntax_error)
@@ -58,9 +58,8 @@ let inference program =
   res
 ;;
 
-let interpret_program ast =
-  (* Here AST is a list of expressions like
-     EDeclaration(_,_,None), ERecDeclaration(_,_,None), EEffectDeclaration _. *)
+(* let interpret_program ast =
+  (* Here AST is a list of SDeclarations. *)
   let res =
     match run_program_inferencer ast with
     | Ok (typ_env, names_list) ->
@@ -94,11 +93,11 @@ let interpret program =
       (match determine_ast_type ast with
        | FreeExpression ->
          (match ast with
-          | [ x ] -> interpret_expr x
+          | [ SExpression x ] -> interpret_expr x
           | _ -> print_parser_error syntax_error)
        | DeclarationList -> interpret_program ast
        | MixedList -> print_parser_error syntax_error)
     | Error _ -> print_parser_error syntax_error
   in
   res
-;;
+;; *)
