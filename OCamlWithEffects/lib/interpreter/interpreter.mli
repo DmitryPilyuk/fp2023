@@ -6,7 +6,7 @@ open Ast
 open Values
 
 val run_expr_interpreter
-  :  struct_item
+  :  expr
   -> ( value
        , [> `Division_by_zero
          | `Handler_without_continue of id

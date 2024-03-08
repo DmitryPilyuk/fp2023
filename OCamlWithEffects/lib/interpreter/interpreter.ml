@@ -223,7 +223,7 @@ module Interpreter (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  let eval env handlers =
+  let eval_expr =
     let rec helper env handlers = function
       (* Environment in the return value is needed for type compatibility
          and correct operation of EDeclaration and ERecDeclaration. Passing
@@ -400,11 +400,25 @@ module Interpreter (M : MONAD_ERROR) = struct
         return (env, v)
       | UnSuccessful -> fail pattern_matching_failure
     in
+    helper
+  ;;
+
+  let eval env handlers =
+    let rec_declaration_helper env handlers name expr =
+      let* env, v = eval_expr env handlers expr in
+      let res =
+        match v with
+        | VFun (_, _, _) -> vrecfun name v
+        | _ -> v
+      in
+      let new_env = extend env name res in
+      return (new_env, res)
+    in
     function
     | SDeclaration decl ->
       (match decl with
        | DDeclaration (name, expr) ->
-         let* env, v = helper env handlers expr in
+         let* env, v = eval_expr env handlers expr in
          let new_env = extend env name v in
          return (new_env, v)
        | DRecDeclaration (name, expr) -> rec_declaration_helper env handlers name expr
@@ -412,11 +426,11 @@ module Interpreter (M : MONAD_ERROR) = struct
          let v = veffect_declaration name in
          let new_env = extend env name v in
          return (new_env, v))
-    | SExpression expr -> helper env handlers expr
+    | SExpression expr -> eval_expr env handlers expr
   ;;
 
   let interpret_expr expr =
-    let* _, v = eval empty empty_handler expr in
+    let* _, v = eval_expr empty empty_handler expr in
     return v
   ;;
 
