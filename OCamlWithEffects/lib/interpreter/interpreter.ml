@@ -223,7 +223,7 @@ module Interpreter (M : MONAD_ERROR) = struct
     | _ -> fail type_error
   ;;
 
-  let eval =
+  let eval env handlers =
     let rec helper env handlers = function
       (* Environment in the return value is needed for type compatibility
          and correct operation of EDeclaration and ERecDeclaration. Passing
@@ -267,18 +267,12 @@ module Interpreter (M : MONAD_ERROR) = struct
           | _ -> fail type_error
         in
         return (env, vlist values)
-      | EDeclaration (name, expr, None) ->
-        let* env, v = helper env handlers expr in
-        let new_env = extend env name v in
-        return (new_env, v)
-      | EDeclaration (name, expr, Some expression) ->
+      | ELetIn (name, expr, expression) ->
         let* env, v = helper env handlers expr in
         let new_env = extend env name v in
         let* _, v = helper new_env handlers expression in
         return (env, v)
-      | ERecDeclaration (name, expr, None) ->
-        rec_declaration_helper env handlers name expr
-      | ERecDeclaration (name, expr, Some expression) ->
+      | ERecLetIn (name, expr, expression) ->
         let* new_env, _ = rec_declaration_helper env handlers name expr in
         let* _, v = helper new_env handlers expression in
         return (env, v)
@@ -297,10 +291,6 @@ module Interpreter (M : MONAD_ERROR) = struct
               application_helper flag fun_env pat_env env handlers exp
             | _ -> fail type_error)
          | _ -> fail type_error)
-      | EEffectDeclaration (name, _) ->
-        let v = veffect_declaration name in
-        let new_env = extend env name v in
-        return (new_env, v)
       | EEffectWithArguments (name, expr) ->
         let* _ = find_effect env name in
         let* _, v1 = helper env handlers expr in
@@ -410,7 +400,19 @@ module Interpreter (M : MONAD_ERROR) = struct
         return (env, v)
       | UnSuccessful -> fail pattern_matching_failure
     in
-    helper
+    function
+    | SDeclaration decl ->
+      (match decl with
+       | DDeclaration (name, expr) ->
+         let* env, v = helper env handlers expr in
+         let new_env = extend env name v in
+         return (new_env, v)
+       | DRecDeclaration (name, expr) -> rec_declaration_helper env handlers name expr
+       | DEffectDeclaration (name, _) ->
+         let v = veffect_declaration name in
+         let new_env = extend env name v in
+         return (new_env, v))
+    | SExpression expr -> helper env handlers expr
   ;;
 
   let interpret_expr expr =

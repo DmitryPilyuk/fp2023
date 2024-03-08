@@ -13,10 +13,10 @@
   Inferencer
   Inf_errors
   Inf_pprint
-  ; Values
-  ; Interpreter
-  ; Int_errors
-  ; Int_pprint
+  Values
+  Interpreter
+  Int_errors
+  Int_pprint
   Run)
  (libraries base angstrom)
  (preprocess

@@ -6,7 +6,7 @@ open Ast
 open Values
 
 val run_expr_interpreter
-  :  expr
+  :  struct_item
   -> ( value
        , [> `Division_by_zero
          | `Handler_without_continue of id
@@ -20,7 +20,7 @@ val run_expr_interpreter
        result
 
 val run_program_interpreter
-  :  expr list
+  :  struct_item list
   -> ( (id, value, Base.String.comparator_witness) Base.Map.t
        , [> `Division_by_zero
          | `Handler_without_continue of id

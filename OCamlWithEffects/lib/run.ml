@@ -9,8 +9,8 @@ open Parser_errors
 open Parser_pprint
 open Inferencer
 open Inf_pprint
-(* open Interpreter
-open Int_pprint *)
+open Interpreter
+open Int_pprint
 
 let parse_with_print code =
   (* The 'parse' function converts the result to a string.
@@ -58,7 +58,7 @@ let inference program =
   res
 ;;
 
-(* let interpret_program ast =
+let interpret_program ast =
   (* Here AST is a list of SDeclarations. *)
   let res =
     match run_program_inferencer ast with
@@ -100,4 +100,4 @@ let interpret program =
     | Error _ -> print_parser_error syntax_error
   in
   res
-;; *)
+;;
