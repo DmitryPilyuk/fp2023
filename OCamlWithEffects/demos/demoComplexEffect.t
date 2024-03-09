@@ -26,7 +26,7 @@
   > EOF
   val E : (int list -> int) -> int effect = <effect>
   val list_sum : int list -> int = <fun>
-  val list_sum_with_effect : 'n -> int = <fun>
+  val list_sum_with_effect : 'a -> int = <fun>
   val result1 : int = 15
   val result2 : int = 5
   $ ./demo.exe <<-EOF
