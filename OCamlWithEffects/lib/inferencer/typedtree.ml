@@ -20,7 +20,8 @@ type typ =
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
   | TContinuePoint (* continue k 0 - here k type is continue point *)
-  | TContinuation of typ (* expression 'continue k x' type is continuation ; typ = x type *)
+  | TContinuation of
+      typ (* expression 'continue k x' type is continuation ; typ = x type *)
 
 module TVarSet = Stdlib.Set.Make (Int) (* Set, that storing type variables. *)
 module VarSet = Stdlib.Set.Make (String)

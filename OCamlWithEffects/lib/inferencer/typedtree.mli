@@ -23,15 +23,16 @@ type typ =
   | TList of typ (* 'a list *)
   | TEffect of typ (* 'a effect *)
   | TContinuePoint (* continue k 0 - here k type is continue point *)
-  | TContinuation of typ (* expression 'continue k x' type is continuation ; typ = x type *)
+  | TContinuation of
+      typ (* expression 'continue k x' type is continuation ; typ = x type *)
 
-  module TVarSet : sig
-    include module type of Set.Make(Int)
-  end
+module TVarSet : sig
+  include module type of Set.Make (Int)
+end
 
-  module VarSet : sig
-    include module type of Set.Make(String)
-  end
+module VarSet : sig
+  include module type of Set.Make (String)
+end
 
 type scheme = Scheme of TVarSet.t * typ
 

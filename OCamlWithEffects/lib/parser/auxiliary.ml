@@ -8,8 +8,7 @@ open Angstrom
 (* Determinant of the type of a steamed expression *)
 
 type ast_type =
-  | DeclarationList
-    (* [SDeclaration (...) ; SDeclaration (...) ; SDeclaration (...)] *)
+  | DeclarationList (* [SDeclaration (...) ; SDeclaration (...) ; SDeclaration (...)] *)
   | MixedList (* [SDeclaration (...) ; SExpression (...)]*)
   | FreeExpression (* SExpression (...) *)
 
@@ -20,14 +19,14 @@ let determine_ast_type ast =
   | [ SExpression _ ] -> FreeExpression
   | _ ->
     let rec helper = function
-    | [] -> DeclarationList
-    | hd :: tl ->
-      (match hd with
-      | SDeclaration _ -> helper tl
-      | _ -> MixedList)
+      | [] -> DeclarationList
+      | hd :: tl ->
+        (match hd with
+         | SDeclaration _ -> helper tl
+         | _ -> MixedList)
     in
     helper ast
-  ;;
+;;
 
 (* ---------------- *)
 

@@ -29,9 +29,9 @@
   val list_sum_with_effect : 'n -> int = <fun>
   val result1 : int = 15
   val result2 : int = 5
-  $ dune exec demo <<-EOF
+  $ ./demo.exe <<-EOF
   >  effect E: int effect;;
   >  let exp = try perform E with
   >    | E k -> continue k 10 + continue k 10;;
   > EOF
-  Syntax error.
+  Type error: unification failed - type continuation int does not match expected type int

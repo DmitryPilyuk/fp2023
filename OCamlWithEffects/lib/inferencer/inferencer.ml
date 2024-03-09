@@ -284,10 +284,7 @@ let lookup_env env name =
     return (Subst.empty, ty)
     (* An empty substitution is needed here only for type matching. *)
   | None ->
-    if is_upper name.[0] then
-      fail (unbound_effect name)
-    else
-      fail (unbound_variable name)
+    if is_upper name.[0] then fail (unbound_effect name) else fail (unbound_variable name)
 ;;
 
 let annotation_to_type =
@@ -312,11 +309,11 @@ let check_unique_vars pattern =
      list constructor patterns, and effects with arguments. *)
   let rec helper var_set = function
     | PVal v ->
-      if VarSet.mem v var_set then
+      if VarSet.mem v var_set
+      then
         (* If at least one variable is found twice, we raise an error. *)
         fail (several_bounds v)
-      else
-        return (VarSet.add v var_set)
+      else return (VarSet.add v var_set)
     | PAny -> return var_set
     | PNill -> return var_set
     | PConst _ -> return var_set
@@ -486,7 +483,7 @@ let infer_expr =
       let* sub2, t2 = helper env2 expr2 in
       let* sub3 = Subst.compose sub1 sub2 in
       return (sub3, t2)
-    | ERecLetIn (name, expr1, expr2)->
+    | ERecLetIn (name, expr1, expr2) ->
       let* fv = fresh_var in
       let env2 = TypeEnv.extend env name (Scheme (TVarSet.empty, fv)) in
       let* sub1, ty1 = helper env2 expr1 in
@@ -575,7 +572,7 @@ let infer_expr =
         RList.fold_left body ~init:(return []) ~f:(fun acc handler ->
           let* _, handler_typ = infer_handler env handler in
           match handler_typ with
-          | TContinuation (cont_ty) ->
+          | TContinuation cont_ty ->
             let* _ = Subst.unify cont_ty typ in
             return acc
           | _ -> return [ handler ])
@@ -658,44 +655,45 @@ let infer_program env program =
     | hd :: tl ->
       let* acc_env, acc_names = acc in
       (match hd with
-        | SDeclaration decl ->
-            (match decl with
-            | DDeclaration (name, expr) -> 
-              let* _, ty = infer_expr acc_env expr in
-              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
-              let new_names_list = update_name_list name acc_names in
-              helper (return (new_acc, new_names_list)) tl
-            | DRecDeclaration (name, expr) ->
-              let* fv = fresh_var in
-              let env2 = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, fv)) in
-              let* sub1, ty1 = infer_expr env2 expr in
-              let* sub2 = Subst.unify ty1 fv in
-              let* sub3 = Subst.compose sub1 sub2 in
-              let ty3 = Subst.apply sub3 fv in
-              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty3)) in
-              let new_names_list = update_name_list name acc_names in
-              helper (return (new_acc, new_names_list)) tl
-            | DEffectDeclaration (name, annot) ->
-              let* ty =
-                match annot with
-                | AEffect _ as a -> return (annotation_to_type a) (* Effect without args. *)
-                | AArrow (l, r) ->
-                  let l_ty = annotation_to_type l in
-                  let r_ty = annotation_to_type r in
-                  let ty = l_ty @-> r_ty in
-                  (match r_ty with
-                  | TEffect _ -> return ty (* At the end there is an effect type. *)
-                  | _ -> fail (wrong_effect_type name ty))
-                | _ ->
-                  (* effect E : primititve type *)
-                  let ty = annotation_to_type annot in
-                  fail (wrong_effect_type name ty)
-              in
-              let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
-              let new_names_list = update_name_list name acc_names in
-              helper (return (new_acc, new_names_list)) tl)
-        | SExpression expr ->
-          let* _, _ = infer_expr acc_env expr in acc)
+       | SDeclaration decl ->
+         (match decl with
+          | DDeclaration (name, expr) ->
+            let* _, ty = infer_expr acc_env expr in
+            let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
+            let new_names_list = update_name_list name acc_names in
+            helper (return (new_acc, new_names_list)) tl
+          | DRecDeclaration (name, expr) ->
+            let* fv = fresh_var in
+            let env2 = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, fv)) in
+            let* sub1, ty1 = infer_expr env2 expr in
+            let* sub2 = Subst.unify ty1 fv in
+            let* sub3 = Subst.compose sub1 sub2 in
+            let ty3 = Subst.apply sub3 fv in
+            let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty3)) in
+            let new_names_list = update_name_list name acc_names in
+            helper (return (new_acc, new_names_list)) tl
+          | DEffectDeclaration (name, annot) ->
+            let* ty =
+              match annot with
+              | AEffect _ as a -> return (annotation_to_type a) (* Effect without args. *)
+              | AArrow (l, r) ->
+                let l_ty = annotation_to_type l in
+                let r_ty = annotation_to_type r in
+                let ty = l_ty @-> r_ty in
+                (match r_ty with
+                 | TEffect _ -> return ty (* At the end there is an effect type. *)
+                 | _ -> fail (wrong_effect_type name ty))
+              | _ ->
+                (* effect E : primititve type *)
+                let ty = annotation_to_type annot in
+                fail (wrong_effect_type name ty)
+            in
+            let new_acc = TypeEnv.extend acc_env name (Scheme (TVarSet.empty, ty)) in
+            let new_names_list = update_name_list name acc_names in
+            helper (return (new_acc, new_names_list)) tl)
+       | SExpression expr ->
+         let* _, _ = infer_expr acc_env expr in
+         acc)
   in
   (* Start *)
   let* env, names = helper (return (env, [])) program in

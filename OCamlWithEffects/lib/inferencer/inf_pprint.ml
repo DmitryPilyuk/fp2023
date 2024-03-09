@@ -20,22 +20,22 @@ let pp_type ppf typ =
       Format.fprintf ppf "'%c" var_name
     | TArr (l, r) ->
       (match l with
-      | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" helper l helper r
-      | _ -> Format.fprintf ppf "%a -> %a" helper l helper r)
+       | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" helper l helper r
+       | _ -> Format.fprintf ppf "%a -> %a" helper l helper r)
     | TList t ->
       (match t with
-      | TArr (_, _) -> Format.fprintf ppf "(%a) list" helper t
-      | _ -> Format.fprintf ppf "%a list" helper t)
+       | TArr (_, _) -> Format.fprintf ppf "(%a) list" helper t
+       | _ -> Format.fprintf ppf "%a list" helper t)
     | TTuple tl ->
       Format.fprintf
         ppf
         "%a"
         (Format.pp_print_list
            ~pp_sep:(fun ppf () -> Format.fprintf ppf " * ")
-           (fun ppf ty -> 
-            (match ty with
-            | TTuple _ | TArr _ -> Format.fprintf ppf "(%a)" helper ty
-            | _ -> helper ppf ty)))
+           (fun ppf ty ->
+             match ty with
+             | TTuple _ | TArr _ -> Format.fprintf ppf "(%a)" helper ty
+             | _ -> helper ppf ty))
         tl
     | TEffect (TArr (_, _) as t) -> Format.fprintf ppf "(%a) effect" helper t
     | TEffect t -> Format.fprintf ppf "%a effect" helper t
@@ -115,9 +115,7 @@ let expr_with_name name typ = String.concat " " [ "val"; name; ":"; type_to_stri
 let print_expr_type typ = Format.printf "%s\n" (expr_without_name typ)
 
 let print_program_type env names_list =
-  Base.List.iter 
-    names_list 
-    ~f:(fun name ->
-      let (Scheme (_, ty)) = Base.Map.find_exn env name in
-      Format.printf "%s\n" (expr_with_name name ty))
+  Base.List.iter names_list ~f:(fun name ->
+    let (Scheme (_, ty)) = Base.Map.find_exn env name in
+    Format.printf "%s\n" (expr_with_name name ty))
 ;;

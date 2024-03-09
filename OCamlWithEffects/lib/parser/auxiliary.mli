@@ -10,7 +10,6 @@ type ast_type =
   | FreeExpression
 
 val determine_ast_type : program -> ast_type
-
 val is_keyword : string -> bool
 val is_whitespace : char -> bool
 val is_digit : char -> bool
