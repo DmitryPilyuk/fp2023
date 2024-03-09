@@ -8,7 +8,8 @@ open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
   parse_with_print {| [20; 24; 5] |};
-  [%expect {|
+  [%expect
+    {|
     [(SExpression
         (EList [(EConst (Int 20)); (EConst (Int 24)); (EConst (Int 5))]))
       ] |}]

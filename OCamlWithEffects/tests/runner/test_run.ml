@@ -6,29 +6,34 @@ open Ocaml_with_effects_lib.Run
 
 let%expect_test _ =
   inference_expr
-  (Ocaml_with_effects_lib.Ast.ELetIn ("f",
-    Ocaml_with_effects_lib.Ast.EFun (Ocaml_with_effects_lib.Ast.PVal "x",
-     Ocaml_with_effects_lib.Ast.EIdentifier "x"),
-    Ocaml_with_effects_lib.Ast.EApplication
-     (Ocaml_with_effects_lib.Ast.EIdentifier "f",
-     Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Int 5))));
+    (Ocaml_with_effects_lib.Ast.ELetIn
+       ( "f"
+       , Ocaml_with_effects_lib.Ast.EFun
+           ( Ocaml_with_effects_lib.Ast.PVal "x"
+           , Ocaml_with_effects_lib.Ast.EIdentifier "x" )
+       , Ocaml_with_effects_lib.Ast.EApplication
+           ( Ocaml_with_effects_lib.Ast.EIdentifier "f"
+           , Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Int 5) ) ));
   [%expect {|
     - : int |}]
-  ;;
+;;
 
 let%expect_test _ =
   interpret_expr
-  (Ocaml_with_effects_lib.Ast.ELetIn ("f",
-    Ocaml_with_effects_lib.Ast.EFun (Ocaml_with_effects_lib.Ast.PVal "x",
-     Ocaml_with_effects_lib.Ast.EIdentifier "x"),
-    Ocaml_with_effects_lib.Ast.EApplication
-     (Ocaml_with_effects_lib.Ast.EIdentifier "f",
-     Ocaml_with_effects_lib.Ast.EUnaryOperation
-      (Ocaml_with_effects_lib.Ast.Not,
-      Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Bool true)))));
+    (Ocaml_with_effects_lib.Ast.ELetIn
+       ( "f"
+       , Ocaml_with_effects_lib.Ast.EFun
+           ( Ocaml_with_effects_lib.Ast.PVal "x"
+           , Ocaml_with_effects_lib.Ast.EIdentifier "x" )
+       , Ocaml_with_effects_lib.Ast.EApplication
+           ( Ocaml_with_effects_lib.Ast.EIdentifier "f"
+           , Ocaml_with_effects_lib.Ast.EUnaryOperation
+               ( Ocaml_with_effects_lib.Ast.Not
+               , Ocaml_with_effects_lib.Ast.EConst (Ocaml_with_effects_lib.Ast.Bool true)
+               ) ) ));
   [%expect {|
     - : bool = false |}]
-  ;;
+;;
 
 let%expect_test _ =
   inference_expr

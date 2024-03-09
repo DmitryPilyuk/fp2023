@@ -8,7 +8,8 @@ let%expect_test _ =
   parse_with_print {|
     effect E1 : int -> int effect
   |};
-  [%expect {|
+  [%expect
+    {|
     [(SDeclaration (DEffectDeclaration ("E1", (AArrow (AInt, (AEffect AInt))))))] |}]
 ;;
 

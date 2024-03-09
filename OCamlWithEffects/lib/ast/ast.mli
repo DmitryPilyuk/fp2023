@@ -95,8 +95,8 @@ type decl =
 [@@deriving show { with_path = false }]
 
 type struct_item =
-  | SDeclaration of decl
-  | SExpression of expr
+  | SDeclaration of decl (** Consructor for declarations *)
+  | SExpression of expr (** Constructor for expressions *)
 [@@deriving show { with_path = false }]
 
 type program = struct_item list [@@deriving show { with_path = false }]
